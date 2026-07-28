@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>OneClick — Pricing Mobile (Homebroker) · v3</title>
+<!--
+  ============================================================================
+  OneClick Pricing Mobile — v3
+  Revisão baseada na Daily de 24/07/2026 (Ronaldo, Thiago, Leonardo, Carlos).
+
+  Princípio: "o trader só quer saber se o negócio dá dinheiro ou não".
+  Tudo que não entra na árvore do P&L saiu da tela de simulação e foi para
+  a etapa de salvar/enviar.
+
+  Mudanças v2 -> v3 (numeração do mapeamento da transcrição):
+   1.1/1.2  Notional (R$ e US$) removido do topo — duplicava a linha da Quantidade
+   1.4      Margem/P&L virou o herói da faixa fixa, acompanha a rolagem
+   2.1/2.2  Bloco de cotação reduzido; tela de referência única deu lugar a
+            Average Cotton Price + Average FX Price (ponderados pelas entregas)
+   3.1      Quadrados de "tela bolsa" fora da boleta
+   4.2      Precificação acima, Quantidade e Preço lado a lado (uma linha)
+   4.3      Toggle Fixo/A Fixar removido
+   5.1/5.2  Fornecedor saiu da tela principal, virou texto livre no pop-up
+   5.3      Ativo (qualidade/safra/mercado) mantido na tela, colapsado
+   6.1-6.6  Fluxo Simular -> Salvar ordem / Descartar -> Enviar p/ aprovação,
+            com status "Simulação" e reabertura para ajuste
+   7.2      Logística e Entregas em linhas e blocos separados
+   7.5      Linha-resumo de média ponderada (espelha a última linha do front office)
+   7.8      Affordance de expandir/recolher explicitada
+   8.2/8.4  P&L exibido é o da ordem em tela, não o total da carteira
+   10.1     Tema escuro (visão homebroker) mantido, com toggle claro
+  ============================================================================
+-->
+<style>
+  :root{
+    --bg:#0E1116; --bg2:#151A21; --card:#1A2029; --card2:#20272F; --line:#2A323C;
+    --text:#E8ECF1; --muted:#8A94A3; --muted2:#5D6673;
+    --green:#3CC044; --green-dark:#2a8c31; --green-soft:rgba(60,192,68,.14);
+    --red:#F4525E; --red-soft:rgba(244,82,94,.14);
+    --blue:#4D8DF7; --blue-soft:rgba(77,141,247,.14);
+    --amber:#F0C24B; --amber-soft:rgba(240,194,75,.12);
+    --radius:14px;
+  }
+  body.light{
+    --bg:#F2F4F7; --bg2:#FFFFFF; --card:#FFFFFF; --card2:#F3F4F6; --line:#E1E4E9;
+    --text:#1B2430; --muted:#6B7280; --muted2:#98A2B0;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ background:var(--bg); }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--text); font-size:14px; line-height:1.4;
+    transition:background-color .25s ease, color .25s ease;
+  }
+  .app{ max-width:460px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
+
+  /* ============ STICKY HEAD ============ */
+  .stickyhead{ position:sticky; top:0; z-index:35; background:var(--bg); }
+  .topbar{
+    background:var(--bg);
+    padding:calc(12px + env(safe-area-inset-top)) 16px 10px;
+    display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--line);
+    transition:background-color .25s ease, border-color .25s ease;
+  }
+  .topbar .back{ font-size:20px; color:var(--muted); line-height:1; }
+  .topbar h1{ font-size:16px; font-weight:800; flex:1; }
+  .topbar .icons{ display:flex; gap:16px; font-size:18px; color:var(--muted); }
+  .topbar .icons #themeToggleBtn{ cursor:pointer; }
+
+  .icon{
+    width:1em; height:1em; display:inline-block; vertical-align:-0.15em; flex:none;
+    fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  }
+  .icon-btn{
+    background:none; border:none; padding:0; margin:0; color:inherit; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; font:inherit;
+  }
+
+  details > summary{ cursor:pointer; list-style:none; }
+  details > summary::-webkit-details-marker{ display:none; }
+
+  /* ============ (1.4) HERÓI: MARGEM / P&L ============
+     Único número grande da tela. É o driver de decisão — fica fixo no topo e
+     acompanha a rolagem. Notional saiu daqui (1.1/1.2). */
+  .summary-bar{ border-bottom:1px solid var(--line); background:var(--bg2); }
+  .summary-bar > summary{ display:flex; align-items:center; gap:10px; padding:11px 16px 12px; }
+  .hero{ flex:1; min-width:0; }
+  .hero-l{ display:block; font-size:9.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .hero-v{ display:block; font-size:29px; font-weight:800; letter-spacing:-.6px; line-height:1.15; margin-top:2px; }
+  .hero-v.pos{ color:var(--green); }
+  .hero-v.neg{ color:var(--red); }
+  .hero-sub{ display:block; font-size:11.5px; font-weight:700; color:var(--muted); margin-top:1px; }
+  .hero-sub.pos{ color:var(--green); }
+  .hero-sub.neg{ color:var(--red); }
+  .s-caret{ font-size:13px; color:var(--muted2); flex:0 0 auto; transition:transform .2s ease; }
+  .summary-bar[open] .s-caret{ transform:rotate(180deg); }
+  .summary-hint{ font-size:9px; color:var(--muted2); font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+  .summary-bar[open] .summary-hint{ display:none; }
+
+  .summary-expand{ padding:10px 16px 13px; border-top:1px solid var(--line); }
+  /* (2.2) Referências ponderadas — substituem a "tela de algodão" fixa */
+  .ref-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .ref{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:7px 9px; }
+  .ref .l{ display:block; font-size:8px; font-weight:800; color:var(--muted2); text-transform:uppercase; letter-spacing:.3px; line-height:1.25; }
+  .ref .v{ display:block; font-size:12.5px; font-weight:800; margin-top:3px; }
+  .mini-ticker{ display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:9px; border-top:1px dashed var(--line); }
+  .mini-ticker .exch{ font-size:9.5px; color:var(--muted2); font-weight:700; }
+  .mini-ticker .price{ font-size:15px; font-weight:800; margin-left:auto; }
+  .mini-ticker .var{ font-size:10.5px; font-weight:800; }
+  .mini-ticker .var.up{ color:var(--green); } .mini-ticker .var.down{ color:var(--red); }
+  .ticker-select{
+    background:transparent; border:none; border-bottom:1px dashed var(--muted2); color:var(--text);
+    font-size:12px; font-weight:800; font-family:inherit; appearance:none; -webkit-appearance:none;
+    padding:1px 15px 2px 0; margin:0; max-width:135px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238A94A3'/></svg>");
+    background-repeat:no-repeat; background-position:right center;
+  }
+  .ticker-select:focus{ outline:none; }
+  .mini-sub{ font-size:10px; color:var(--muted2); margin-top:6px; display:flex; justify-content:space-between; gap:8px; }
+
+  /* ============ VIEWS ============ */
+  .view{ display:none; }
+  .view.active{ display:block; }
+  .context-line{ padding:11px 16px 0; font-size:11px; color:var(--muted2); display:flex; justify-content:space-between; gap:8px; }
+
+  /* Banner de edição de simulação salva (6.4) */
+  .edit-banner{
+    display:none; align-items:center; gap:9px; margin:11px 12px 0; padding:9px 12px;
+    background:var(--amber-soft); border:1px solid rgba(240,194,75,.35); border-radius:11px;
+  }
+  .edit-banner.on{ display:flex; }
+  .edit-banner .t{ flex:1; font-size:11.5px; font-weight:700; color:var(--amber); }
+  .edit-banner button{ background:none; border:none; color:var(--amber); font-size:11px; font-weight:800; text-decoration:underline; }
+
+  /* ============ (4.2) BLOCO DE NEGOCIAÇÃO ============
+     Precificação em cima; Quantidade e Preço lado a lado, uma linha só. */
+  .trade-block{ padding:12px 12px 14px; border-bottom:1px solid var(--line); }
+  .tb-label{ font-size:9.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin:0 2px 6px; }
+  .tb-seg{ display:flex; background:var(--card); border:1px solid var(--line); border-radius:11px; padding:3px; margin-bottom:10px; }
+  .tb-seg button{
+    flex:1; background:none; border:none; color:var(--muted); font-size:11.5px; font-weight:700;
+    padding:8px 0; border-radius:8px; white-space:nowrap;
+  }
+  .tb-seg button.active{ background:var(--card2); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,.18); }
+  .tb-duo{ display:flex; gap:8px; }
+  .tb-field{ flex:1; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 11px 10px; }
+  .tb-field .l{ font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+  .tb-field .l .req{ color:var(--red); }
+  .tb-inrow{ display:flex; align-items:center; gap:4px; margin-top:3px; }
+  .tb-field input{
+    flex:1; min-width:0; width:100%; background:transparent; border:none; color:var(--text);
+    font-size:19px; font-weight:800; padding:0;
+  }
+  .tb-field input:focus{ outline:none; }
+  .tb-step{ display:flex; gap:3px; flex:0 0 auto; }
+  .tb-step button{
+    width:26px; height:26px; border-radius:50%; border:none; background:var(--card2); color:var(--text);
+    display:flex; align-items:center; justify-content:center; font-size:13px;
+  }
+  .tb-step button:active{ background:var(--line); }
+  .tb-field .sub{ font-size:9.5px; color:var(--muted2); margin-top:3px; font-weight:600; }
+
+  /* ============ LINHAS DE FORMULÁRIO ============ */
+  .sheet{ margin-top:0; }
+  .b-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:14px 16px; border-bottom:1px solid var(--line); min-height:54px;
+  }
+  .b-row .lbl{ font-size:13.5px; color:var(--muted); font-weight:600; flex:0 0 auto; }
+  .b-row .val-strong{ font-size:13.5px; font-weight:700; text-align:right; flex:1; }
+  .b-row .val-strong .dim{ color:var(--muted2); font-weight:600; }
+  .chev{ color:var(--muted2); font-size:13px; transition:transform .2s ease; }
+
+  /* (7.2) Logística e Entregas com identidade de cor distinta já na boleta */
+  .b-row .tagdot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; margin-right:-4px; }
+  .tagdot.rotas{ background:var(--green); }
+  .tagdot.entregas{ background:var(--blue); }
+
+  /* Acordeão "Ativo" (5.3) */
+  .acc-row{ border-bottom:1px solid var(--line); }
+  .acc-row > summary{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:14px 16px; min-height:54px;
+  }
+  .acc-row > summary .lbl{ font-size:13.5px; color:var(--muted); font-weight:600; flex:0 0 auto; }
+  .acc-row > summary .val{
+    flex:1; text-align:right; font-size:13.5px; font-weight:700; padding-left:8px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .acc-row[open] > summary .chev{ transform:rotate(90deg); }
+  .acc-row-body{ padding:2px 16px 16px; background:var(--card2); }
+  .acc-row-body .field{ margin-bottom:10px; }
+  .acc-row-body .field:last-child{ margin-bottom:0; }
+  .acc-row-body .field label{
+    display:block; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.4px; margin-bottom:5px;
+  }
+  .acc-row-body select, .acc-row-body input{
+    width:100%; background:var(--bg2); color:var(--text); border:1px solid var(--line); border-radius:8px;
+    padding:10px 30px 10px 11px; font-size:13.5px; font-weight:600; appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238A94A3'/></svg>");
+    background-repeat:no-repeat; background-position:right 10px center;
+  }
+  .acc-row-body input{ background-image:none; padding:10px 11px; }
+  .acc-row-body .field-row{ display:flex; gap:8px; }
+  .acc-row-body .field-row .field{ flex:1; min-width:0; }
+
+  /* ============ (7.5) LINHA-RESUMO DE MÉDIA PONDERADA ============
+     Espelha a última linha do front office: independente de quantas entregas
+     forem lançadas, o trader bate o olho numa linha só. */
+  .wavg{ margin:12px 12px 0; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .wavg-head{ display:flex; align-items:center; gap:8px; padding:9px 13px; background:var(--card2); border-bottom:1px solid var(--line); }
+  .wavg-head .t{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); flex:1; }
+  .wavg-head .badge{ font-size:8.5px; font-weight:800; background:var(--blue-soft); color:var(--blue); border-radius:7px; padding:2px 8px; }
+  .wavg-grid{ display:grid; grid-template-columns:repeat(4,1fr); }
+  .wavg-cell{ padding:9px 4px 10px; text-align:center; border-right:1px solid var(--line); min-width:0; }
+  .wavg-cell:last-child{ border-right:none; }
+  .wavg-cell .l{ display:block; font-size:7.5px; font-weight:800; color:var(--muted2); text-transform:uppercase; letter-spacing:.3px; line-height:1.3; }
+  .wavg-cell .v{ display:block; font-size:12.5px; font-weight:800; margin-top:3px; }
+  .wavg-cell .v.amber{ color:var(--amber); }
+
+  .section-label{
+    padding:16px 16px 8px; font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.7px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-label .btns{ display:flex; gap:6px; }
+  .pill-btn{ background:var(--card); border:1px solid var(--line); color:var(--blue); font-size:11px; font-weight:700; border-radius:14px; padding:5px 12px; }
+  .pill-btn.ghost{ color:var(--muted); }
+
+  /* ============ CARDS DE ROTA / ENTREGA ============ */
+  .hb-entregas{ padding:0 12px; }
+  .hb-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); margin-bottom:10px; overflow:hidden; }
+  .hb-card-top{ display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--card2); border-bottom:1px solid var(--line); }
+  .hb-route-tag{ background:var(--green-soft); color:var(--green); font-size:10px; font-weight:800; padding:3px 10px; border-radius:9px; flex:0 0 auto; }
+  .entrega-badge{ background:var(--blue-soft); color:var(--blue); font-size:10px; font-weight:800; padding:3px 10px; border-radius:9px; flex:0 0 auto; white-space:nowrap; }
+  .entrega-rota-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .entrega-rota-row .l{ font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
+  .entrega-rota-select{
+    background:var(--bg2); color:var(--text); font-size:11px; font-weight:700; padding:5px 24px 5px 9px; border-radius:7px;
+    border:1px solid var(--line); appearance:none; -webkit-appearance:none; flex:0 0 auto;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='5'><path d='M0 0l4.5 5 4.5-5z' fill='%238A94A3'/></svg>");
+    background-repeat:no-repeat; background-position:right 8px center;
+  }
+  .hb-route-summary{ flex:1; font-size:11px; color:var(--muted); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hb-x{ background:none; border:none; color:var(--muted2); font-size:15px; padding:2px 4px; flex:0 0 auto; }
+  .hb-card-body{ padding:10px 12px 12px; }
+
+  /* (7.8) Affordance de expandir: virou um botão com borda, não texto solto */
+  .acc-mini{ margin-top:8px; }
+  .acc-mini > summary{
+    display:flex; align-items:center; justify-content:center; gap:6px; font-size:11px; font-weight:700; color:var(--muted);
+    padding:7px 10px; border:1px dashed var(--line); border-radius:9px; background:var(--bg2);
+  }
+  .acc-mini > summary .chev{ font-size:11px; }
+  .acc-mini[open] > summary{ color:var(--blue); border-style:solid; border-color:var(--blue-soft); }
+  .acc-mini[open] > summary .chev{ transform:rotate(90deg); }
+  .acc-mini[open] > summary .lbl-closed{ display:none; }
+  .acc-mini:not([open]) > summary .lbl-open{ display:none; }
+  .acc-mini-body{ margin-top:10px; }
+
+  .hb-price-line{ display:flex; align-items:center; justify-content:space-between; background:var(--amber-soft); border:1px solid rgba(240,194,75,.3); border-radius:8px; padding:7px 10px; margin:8px 0 0; }
+  .hb-price-line .l{ font-size:10px; font-weight:800; color:var(--amber); text-transform:uppercase; letter-spacing:.4px; }
+  .hb-price-line input{ width:86px; background:transparent; border:none; color:var(--amber); font-size:14px; font-weight:800; text-align:right; }
+  .hb-price-line input:focus{ outline:none; }
+  .hb-detail-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .hb-detail{ background:var(--bg2); border-radius:7px; padding:6px 8px; }
+  .hb-detail .l{ font-size:8.5px; font-weight:700; color:var(--muted2); text-transform:uppercase; letter-spacing:.3px; }
+  .hb-detail .v{ font-size:11.5px; font-weight:700; margin-top:1px; }
+  .hb-detail input{ width:100%; background:transparent; border:none; color:var(--text); font-size:11.5px; font-weight:700; padding:0; margin-top:1px; }
+  .hb-detail input:focus{ outline:none; }
+  .hb-detail.qty .v{ color:var(--green); }
+
+  .hb-total-line{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:4px 16px 0; padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  }
+  .hb-total-line .l{ font-size:10.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .hb-total-line .badge{ font-size:9px; font-weight:800; background:var(--green-soft); color:var(--green); border-radius:8px; padding:2px 8px; margin-left:6px; }
+  .hb-total-line .v{ font-size:15px; font-weight:800; color:var(--amber); }
+
+  /* ============ BOTTOM SHEETS ============ */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .modal-overlay.open{ opacity:1; pointer-events:auto; }
+  .modal-sheet{
+    background:var(--bg2); width:100%; max-width:460px; max-height:88vh;
+    border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden;
+    transform:translateY(16px); transition:transform .2s ease;
+  }
+  .modal-overlay.open .modal-sheet{ transform:translateY(0); }
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:15px 16px; border-bottom:1px solid var(--line); flex:0 0 auto;
+  }
+  .modal-head h2{ font-size:15.5px; font-weight:800; }
+  .modal-head .sub{ font-size:10.5px; color:var(--muted2); font-weight:600; margin-top:1px; }
+  .modal-body{ overflow-y:auto; flex:1 1 auto; padding-bottom:6px; }
+  .modal-section{ margin:14px 16px 0; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .modal-section-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 14px; }
+  .modal-section-head .t{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; }
+  .modal-section.rotas .modal-section-head{ background:var(--green-soft); }
+  .modal-section.rotas .modal-section-head .t{ color:var(--green); }
+  .modal-section.entregas .modal-section-head{ background:var(--blue-soft); }
+  .modal-section.entregas .modal-section-head .t{ color:var(--blue); }
+  .modal-section-body{ padding:12px 12px 10px; }
+  .modal-foot{ padding:12px 16px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); flex:0 0 auto; }
+  .btn-primary{ width:100%; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:14px; font-size:14px; font-weight:800; }
+  .btn-primary.green{ background:var(--green); }
+  .btn-ghost{ width:100%; background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:13px; font-size:13.5px; font-weight:700; }
+
+  /* Campos do pop-up "antes de enviar" (5.1/5.4/6.5) */
+  .form-list{ padding:4px 16px 0; }
+  .form-field{ margin-top:13px; }
+  .form-field label{ display:block; font-size:9.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.45px; margin-bottom:5px; }
+  .form-field label .opt{ color:var(--muted2); font-weight:700; text-transform:none; letter-spacing:0; }
+  .form-field input, .form-field select{
+    width:100%; background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:10px;
+    padding:11px 12px; font-size:13.5px; font-weight:600; appearance:none; -webkit-appearance:none;
+  }
+  .form-field select{
+    padding-right:30px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%238A94A3'/></svg>");
+    background-repeat:no-repeat; background-position:right 11px center;
+  }
+  .form-field input::placeholder{ color:var(--muted2); font-weight:500; }
+  .form-field input:focus, .form-field select:focus{ outline:none; border-color:var(--blue); }
+  .form-note{ margin:14px 16px 0; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:10px; font-size:10.5px; color:var(--muted2); line-height:1.5; }
+  .recap{ display:flex; gap:8px; margin:14px 16px 0; }
+  .recap div{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 10px; text-align:center; }
+  .recap .l{ display:block; font-size:8px; font-weight:800; color:var(--muted2); text-transform:uppercase; letter-spacing:.3px; }
+  .recap .v{ display:block; font-size:13px; font-weight:800; margin-top:2px; }
+  .recap .v.pos{ color:var(--green); } .recap .v.neg{ color:var(--red); }
+
+  /* ============ AÇÕES (6.1 / 6.2 / 6.6) ============ */
+  .actions{ display:flex; gap:8px; padding:14px 16px 0; }
+  .actions button{ flex:1; border-radius:12px; padding:13px 8px; font-size:13px; font-weight:800; border:1px solid var(--line); }
+  .btn-discard{ background:transparent; color:var(--muted); }
+  .btn-discard:active{ background:var(--card); }
+  .btn-save{ background:var(--card); color:var(--text); display:flex; align-items:center; justify-content:center; gap:7px; }
+  .btn-save .icon{ width:15px; height:15px; }
+  .btn-save:active{ background:var(--card2); }
+
+  .swipe-wrap{ margin:10px 16px 8px; position:relative; }
+  .swipe-track{
+    position:relative; height:56px; background:var(--card); border:1px solid var(--line);
+    border-radius:28px; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .swipe-fill{ position:absolute; left:0; top:0; bottom:0; width:0; background:var(--green-soft); transition:width .08s linear; }
+  .swipe-label{ font-size:13.5px; font-weight:700; color:var(--muted); z-index:1; pointer-events:none; }
+  .swipe-knob{
+    position:absolute; left:4px; top:4px; width:48px; height:48px; border-radius:50%;
+    background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:19px; font-weight:800; z-index:2; touch-action:none; cursor:grab; user-select:none;
+    transition:left .18s ease;
+  }
+  .swipe-track.sent{ background:var(--green-soft); border-color:var(--green); }
+  .swipe-track.sent .swipe-label{ color:var(--green); font-weight:800; }
+
+  /* ============ MERCADO (9.1 — mantido) ============ */
+  .mkt-list{ padding:6px 0; }
+  .mkt-row{ display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:1px solid var(--line); }
+  .mkt-row .sym-box{ flex:1; min-width:0; }
+  .mkt-row .sym{ font-size:14.5px; font-weight:800; }
+  .mkt-row .desc{ font-size:10.5px; color:var(--muted2); margin-top:1px; }
+  .mkt-row .quote-box{ text-align:right; }
+  .mkt-row .quote{ font-size:15px; font-weight:800; }
+  .mkt-row .fx{ font-size:10.5px; color:var(--muted); margin-top:1px; }
+  .mkt-row .var-chip{ flex:0 0 74px; text-align:center; border-radius:7px; padding:7px 0; font-size:12.5px; font-weight:800; }
+  .mkt-row .var-chip.up{ background:var(--green-soft); color:var(--green); }
+  .mkt-row .var-chip.down{ background:var(--red-soft); color:var(--red); }
+  .mkt-row .var-chip.na{ background:var(--card); color:var(--muted2); }
+
+  /* ============ OPERAÇÕES (8.x) ============ */
+  .port-head{ padding:15px 16px; border-bottom:1px solid var(--line); }
+  .port-head .cap{ font-size:9.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .port-head .big{ font-size:28px; font-weight:800; letter-spacing:-.5px; margin-top:2px; }
+  .port-head .row{ display:flex; justify-content:space-between; margin-top:6px; font-size:12.5px; }
+  .port-head .row .l{ color:var(--muted); }
+  .port-head .row .v.pos{ color:var(--green); font-weight:700; }
+
+  .limits-list{ display:flex; flex-direction:column; gap:10px; padding:12px 12px 4px; }
+  .limit-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; }
+  .limit-title{ font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .limit-value{ font-size:22px; font-weight:800; margin-top:6px; }
+  .limit-value .unit{ font-size:12px; font-weight:600; color:var(--muted); }
+  .limit-value.green{ color:var(--green); }
+  .limit-sub{ font-size:11px; color:var(--muted2); margin-top:2px; }
+  .limit-bar{ height:6px; background:var(--card2); border-radius:4px; margin-top:10px; overflow:hidden; }
+  .limit-bar-fill{ height:100%; background:var(--green); border-radius:4px; }
+  .limits-toggle{ margin:10px 12px 0; }
+  .limits-toggle > summary{
+    display:flex; align-items:center; justify-content:space-between; padding:11px 14px;
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;
+  }
+  .limits-toggle[open] > summary .chev{ transform:rotate(90deg); }
+
+  .port-tabs{ display:flex; border-bottom:1px solid var(--line); margin-top:12px; }
+  .port-tabs button{
+    flex:1; background:none; border:none; color:var(--muted); font-size:12.5px; font-weight:700;
+    padding:12px 0; border-bottom:2.5px solid transparent;
+  }
+  .port-tabs button.active{ color:var(--text); border-bottom-color:var(--blue); }
+  .contract-card{ margin:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; cursor:pointer; }
+  .contract-card:active{ background:var(--card2); }
+  .contract-card .top{ display:flex; align-items:center; gap:8px; }
+  .contract-card .sym{ font-size:14px; font-weight:800; flex:1; }
+  .contract-card .status{ font-size:9.5px; font-weight:800; padding:3px 9px; border-radius:8px; text-transform:uppercase; letter-spacing:.3px; }
+  .contract-card .status.sim{ background:var(--blue-soft); color:var(--blue); }
+  .contract-card .status.pend{ background:var(--amber-soft); color:var(--amber); }
+  .contract-card .status.aprov{ background:var(--green-soft); color:var(--green); }
+  .contract-card .meta{ font-size:11px; color:var(--muted); margin-top:4px; }
+  .contract-card .nums{ display:flex; gap:14px; margin-top:9px; }
+  .contract-card .nums .n{ min-width:0; }
+  .contract-card .nums .n .l{ font-size:9px; color:var(--muted2); font-weight:700; text-transform:uppercase; }
+  .contract-card .nums .n .v{ font-size:13px; font-weight:800; margin-top:1px; }
+  .contract-card .nums .n .v.pos{ color:var(--green); }
+  .contract-card .nums .n .v.neg{ color:var(--red); }
+  .contract-card .reopen{ margin-top:9px; font-size:10.5px; font-weight:800; color:var(--blue); display:flex; align-items:center; gap:5px; }
+  .empty-state{ text-align:center; padding:56px 30px; color:var(--muted2); font-size:12.5px; }
+  .empty-state .icon{ width:36px; height:36px; stroke-width:1.5; margin-bottom:12px; }
+
+  /* ============ FERRAMENTAS ============ */
+  .tools-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px; }
+  .tool-card{
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 14px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:74px;
+  }
+  .tool-card .t{ font-size:13px; font-weight:700; line-height:1.3; }
+  .tool-card .ic{ font-size:19px; color:var(--muted); }
+  .tool-card.buy{ background:var(--blue); border-color:var(--blue); }
+  .tool-card.buy .t, .tool-card.buy .ic{ color:#fff; }
+  .tool-card.sell{ background:var(--red); border-color:var(--red); }
+  .tool-card.sell .t, .tool-card.sell .ic{ color:#fff; }
+
+  /* ============ BOTTOM NAV ============ */
+  .bottomnav{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:460px;
+    background:var(--bg2); border-top:1px solid var(--line);
+    display:flex; padding:8px 4px calc(8px + env(safe-area-inset-bottom)); z-index:40;
+  }
+  .bottomnav button{
+    flex:1; background:none; border:none; color:var(--muted2); font-size:9.5px; font-weight:700;
+    display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px 0;
+  }
+  .bottomnav button .ic{ font-size:19px; line-height:1; }
+  .bottomnav button.active{ color:var(--blue); }
+
+  .toast{
+    position:fixed; left:50%; transform:translateX(-50%) translateY(20px); bottom:calc(90px + env(safe-area-inset-bottom));
+    background:var(--card2); border:1px solid var(--green); color:var(--text); font-size:12.5px; font-weight:600;
+    padding:12px 18px; border-radius:12px; z-index:120; opacity:0; pointer-events:none; transition:all .25s ease;
+    max-width:85%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .footnote{ text-align:center; font-size:10px; color:var(--muted2); padding:12px 20px 24px; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<svg style="position:absolute; width:0; height:0; overflow:hidden;" aria-hidden="true">
+  <defs>
+    <symbol id="ic-back" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+    <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></symbol>
+    <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></symbol>
+    <symbol id="ic-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+    <symbol id="ic-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></symbol>
+    <symbol id="ic-chevron-right" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></symbol>
+    <symbol id="ic-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="ic-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+    <symbol id="ic-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="ic-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22V15"/></symbol>
+    <symbol id="ic-pie" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
+    <symbol id="ic-trending-up" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></symbol>
+    <symbol id="ic-repeat" viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></symbol>
+    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ic-plus-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></symbol>
+    <symbol id="ic-minus-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></symbol>
+    <symbol id="ic-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+    <symbol id="ic-archive" viewBox="0 0 24 24"><path d="M21 8H3v13h18V8z"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></symbol>
+    <symbol id="ic-truck" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></symbol>
+    <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+    <symbol id="ic-bar-chart" viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-6"/></symbol>
+    <symbol id="ic-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+    <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+    <symbol id="ic-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- ================= STICKY HEAD ================= -->
+  <div class="stickyhead">
+    <div class="topbar">
+      <button class="icon-btn back" title="Voltar"><svg class="icon"><use href="#ic-back"></use></svg></button>
+      <h1 id="topbar-title">Nova Simulação</h1>
+      <div class="icons">
+        <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Alternar tema claro/escuro">
+          <svg class="icon" id="themeIconSun"><use href="#ic-sun"></use></svg>
+          <svg class="icon" id="themeIconMoon" style="display:none;"><use href="#ic-moon"></use></svg>
+        </button>
+        <button class="icon-btn" title="Buscar"><svg class="icon"><use href="#ic-search"></use></svg></button>
+        <button class="icon-btn" title="Notificações"><svg class="icon"><use href="#ic-bell"></use></svg></button>
+        <button class="icon-btn" title="Mais opções"><svg class="icon"><use href="#ic-more"></use></svg></button>
+      </div>
+    </div>
+
+    <!-- (1.4) Margem/P&L é o único número grande. Fica fixo, acompanha a rolagem.
+         (8.4) O escopo é sempre a ORDEM em tela — nunca o total da carteira. -->
+    <details class="summary-bar" id="summaryBar">
+      <summary>
+        <div class="hero">
+          <span class="hero-l">Margem estimada</span>
+          <span class="hero-v" id="prev-pnl-num">R$ 0</span>
+          <span class="hero-sub" id="prev-pnl-sub">US$ 0 · 0,0% sobre o notional</span>
+        </div>
+        <span class="summary-hint">Referências</span>
+        <svg class="icon s-caret"><use href="#ic-chevron-down"></use></svg>
+      </summary>
+      <div class="summary-expand">
+        <!-- (2.2) Nada de "tela de referência" fixa: médias ponderadas pelas entregas -->
+        <div class="ref-grid">
+          <div class="ref"><span class="l">Average Cotton Price</span><span class="v" id="prev-cot-avg">—</span></div>
+          <div class="ref"><span class="l">Average FX Price</span><span class="v" id="prev-fx-avg">—</span></div>
+          <div class="ref"><span class="l">Exposure</span><span class="v" id="prev-fx-val">US$ 0</span></div>
+        </div>
+        <!-- (2.4) Variação do dia foi elogiada — mantida, em escala menor -->
+        <div class="mini-ticker">
+          <select id="calc-serie-bolsa" class="ticker-select" title="Tela de referência para conversão"></select>
+          <span class="exch">ICE · NYBOT <svg class="icon"><use href="#ic-flag"></use></svg></span>
+          <span class="price" id="ticker-price">71,52</span>
+          <span class="var up" id="ticker-var">+0,93%</span>
+        </div>
+        <div class="mini-sub">
+          <span>¢/lb · alto 72,10 · baixo 70,86</span>
+          <span>tempo real: não consolidado</span>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- VIEW: BOLETA                                       -->
+  <!-- ================================================== -->
+  <div class="view active" id="view-boleta">
+
+    <div class="context-line">
+      <span>Alocação: Book Algodão · L. Velani</span>
+      <span id="ordem-ref">Nova · Compra</span>
+    </div>
+
+    <!-- (6.4) Reabrir simulação salva para ajuste -->
+    <div class="edit-banner" id="editBanner">
+      <svg class="icon" style="color:var(--amber);"><use href="#ic-edit"></use></svg>
+      <span class="t" id="editBannerText">Editando simulação</span>
+      <button type="button" onclick="clearForm(true)">Nova</button>
+    </div>
+
+    <!-- (4.2) Precificação em cima; Quantidade e Preço lado a lado -->
+    <div class="trade-block">
+      <div class="tb-label">Precificação</div>
+      <div class="tb-seg" id="precSeg">
+        <button type="button" data-unit="USD_TON">USD/t</button>
+        <button type="button" data-unit="BRL_LB" class="active">BRL/Lb</button>
+        <button type="button" data-unit="USD_LB">USD/Lb</button>
+        <button type="button" data-unit="USD_TON2">US$/Ton</button>
+      </div>
+
+      <div class="tb-duo">
+        <div class="tb-field">
+          <span class="l">Quantidade <span class="req">*</span></span>
+          <div class="tb-inrow">
+            <input id="calc-quantidade" value="200" inputmode="decimal">
+            <div class="tb-step">
+              <button type="button" onclick="stepQty(-10)"><svg class="icon"><use href="#ic-minus"></use></svg></button>
+              <button type="button" onclick="stepQty(10)"><svg class="icon"><use href="#ic-plus"></use></svg></button>
+            </div>
+          </div>
+          <!-- (1.3) O valor monetário mora aqui, embaixo da quantidade — foi elogiado
+               e por isso o Notional saiu do topo. -->
+          <div class="sub" id="qty-dual-hint">ton · ≈ R$ 88,2M</div>
+        </div>
+
+        <div class="tb-field">
+          <span class="l">Preço <span class="req">*</span></span>
+          <div class="tb-inrow">
+            <input id="calc-preco" value="4,35" inputmode="decimal">
+            <div class="tb-step">
+              <button type="button" onclick="stepPreco(-0.05)"><svg class="icon"><use href="#ic-minus"></use></svg></button>
+              <button type="button" onclick="stepPreco(0.05)"><svg class="icon"><use href="#ic-plus"></use></svg></button>
+            </div>
+          </div>
+          <div class="sub" id="preco-unit-hint">BRL/Lb</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <!-- (5.3) Ativo permanece na tela, colapsado em 1 linha -->
+      <details class="acc-row" id="ativo-acc">
+        <summary>
+          <span class="lbl">Ativo</span>
+          <span class="val" id="ativo-summary">31-3-36 GS 28 · 2026 EXPORT</span>
+          <svg class="icon chev"><use href="#ic-chevron-right"></use></svg>
+        </summary>
+        <div class="acc-row-body">
+          <div class="field">
+            <label>Qualidade *</label>
+            <select id="calc-qualidade">
+              <option>Selecione</option>
+              <option selected>31-3-36 GS 28</option>
+              <option>32-3-36 GS 30</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Safra</label>
+              <select id="calc-safra"><option>2025</option><option selected>2026</option><option>2027</option></select>
+            </div>
+            <div class="field">
+              <label>Mercado</label>
+              <select id="calc-mercado"><option>Selecione</option><option selected>EXPORT</option><option>INT</option></select>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- (7.2) Logística e Entregas são DUAS linhas distintas, com cor própria -->
+      <div class="b-row" onclick="openLogisticaModal('rotas')" role="button" tabindex="0" style="cursor:pointer;">
+        <span class="tagdot rotas"></span>
+        <span class="lbl">Logística</span>
+        <span class="val-strong" id="logistica-summary">1 rota · <span class="dim">R$ 100,00/ton</span></span>
+        <svg class="icon chev"><use href="#ic-chevron-right"></use></svg>
+      </div>
+      <div class="b-row" onclick="openLogisticaModal('entregas')" role="button" tabindex="0" style="cursor:pointer;">
+        <span class="tagdot entregas"></span>
+        <span class="lbl">Entregas</span>
+        <span class="val-strong" id="entregas-summary">2 entregas · <span class="dim">até 08-mai-2026</span></span>
+        <svg class="icon chev"><use href="#ic-chevron-right"></use></svg>
+      </div>
+    </div>
+
+    <!-- (7.5) Linha-resumo consolidada — espelha a última linha do front office.
+         Não importa quantas entregas: o trader lê uma linha só. -->
+    <div class="wavg">
+      <div class="wavg-head">
+        <span class="t">Consolidado da ordem</span>
+        <span class="badge" id="wavg-badge">média ponderada</span>
+      </div>
+      <div class="wavg-grid">
+        <div class="wavg-cell"><span class="l">Qtd Total</span><span class="v" id="wavg-qty">200,00 t</span></div>
+        <div class="wavg-cell"><span class="l">Cotação Méd. Pond.</span><span class="v" id="wavg-cot">—</span></div>
+        <div class="wavg-cell"><span class="l">FX Médio Pond.</span><span class="v" id="wavg-fx">—</span></div>
+        <div class="wavg-cell"><span class="l">Frete Total</span><span class="v amber" id="wavg-frete">R$ 100,00</span></div>
+      </div>
+    </div>
+
+    <!-- (6.1 / 6.2 / 6.6) Simular ≠ Salvar ≠ Enviar -->
+    <div class="actions">
+      <button type="button" class="btn-discard" onclick="clearForm(true)">Descartar</button>
+      <button type="button" class="btn-save" onclick="openSendModal('save')">
+        <svg class="icon"><use href="#ic-save"></use></svg> Salvar ordem
+      </button>
+    </div>
+
+    <div class="swipe-wrap">
+      <div class="swipe-track" id="swipeTrack">
+        <div class="swipe-fill" id="swipeFill"></div>
+        <span class="swipe-label" id="swipeLabel">Deslize para enviar p/ aprovação</span>
+        <div class="swipe-knob" id="swipeKnob"><svg class="icon"><use href="#ic-arrow-right"></use></svg></div>
+      </div>
+    </div>
+
+    <div class="footnote">
+      Vigência: Dia · Originação (Compra)<br>
+      Protótipo OneClick Pricing Mobile · v3 · revisão da daily de 24/07
+    </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- VIEW: MERCADOS (9.1 — mantido como está)           -->
+  <!-- ================================================== -->
+  <div class="view" id="view-mercado">
+    <div class="mkt-list" id="mkt-list"></div>
+    <div class="footnote">Cotações mock — mesmas curvas do protótipo desktop · ¢/lb e BRL/USD</div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- VIEW: OPERAÇÕES                                    -->
+  <!-- ================================================== -->
+  <div class="view" id="view-carteira">
+    <div class="port-head">
+      <div class="cap">Carteira consolidada</div>
+      <div class="big">R$ 8,2M</div>
+      <div class="row"><span class="l">P&amp;L não realizado da carteira</span><span class="v pos" id="port-pnl">+R$ 890k</span></div>
+    </div>
+
+    <!-- (10.4) Limites são contexto, não protagonista: entram recolhidos -->
+    <details class="limits-toggle">
+      <summary>Limites e exposição <svg class="icon chev"><use href="#ic-chevron-right"></use></svg></summary>
+      <div class="limits-list">
+        <div class="limit-card">
+          <div class="limit-title">Qtd Disponível</div>
+          <div class="limit-value">15.000 <span class="unit">ton</span></div>
+          <div class="limit-sub">de 25.000 alocadas</div>
+          <div class="limit-bar"><div class="limit-bar-fill" style="width:40%;"></div></div>
+        </div>
+        <div class="limit-card">
+          <div class="limit-title">Margem Disponível</div>
+          <div class="limit-value green">R$ 450k</div>
+          <div class="limit-sub">de R$ 500k</div>
+          <div class="limit-bar"><div class="limit-bar-fill" style="width:10%;"></div></div>
+        </div>
+        <div class="limit-card">
+          <div class="limit-title">Exposição Financeira</div>
+          <div class="limit-value">R$ 8,2M</div>
+          <div class="limit-sub">de R$ 12M</div>
+          <div class="limit-bar"><div class="limit-bar-fill" style="width:68%;"></div></div>
+        </div>
+      </div>
+    </details>
+
+    <div class="port-tabs" id="port-tabs">
+      <button data-tab="simulacoes" class="active">Simulações</button>
+      <button data-tab="ordens">Em aprovação</button>
+      <button data-tab="posicoes">Posições</button>
+    </div>
+    <div id="port-body"></div>
+    <div class="footnote">Toque em qualquer card para reabrir e ajustar a simulação.</div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- VIEW: FERRAMENTAS                                  -->
+  <!-- ================================================== -->
+  <div class="view" id="view-ferramentas">
+    <div class="section-label" style="padding-top:18px;">Caixa de ferramentas</div>
+    <div class="tools-grid">
+      <div class="tool-card buy" onclick="clearForm(false); goTo('boleta')"><span class="t">Nova Simulação<br>(Compra)</span><svg class="icon ic"><use href="#ic-plus-circle"></use></svg></div>
+      <div class="tool-card sell"><span class="t">Venda /<br>Exportação</span><svg class="icon ic"><use href="#ic-minus-circle"></use></svg></div>
+      <div class="tool-card" onclick="goTo('mercado')"><span class="t">Curvas de<br>Mercado</span><svg class="icon ic"><use href="#ic-trending-up"></use></svg></div>
+      <div class="tool-card"><span class="t">Exposure</span><svg class="icon ic"><use href="#ic-globe"></use></svg></div>
+      <div class="tool-card"><span class="t">Backoffice<br><small style="color:var(--muted2)">read-only</small></span><svg class="icon ic"><use href="#ic-archive"></use></svg></div>
+      <div class="tool-card"><span class="t">Cadastro<br>de Rotas</span><svg class="icon ic"><use href="#ic-truck"></use></svg></div>
+      <div class="tool-card"><span class="t">Calendário<br>de Entregas</span><svg class="icon ic"><use href="#ic-calendar"></use></svg></div>
+      <div class="tool-card"><span class="t">Relatórios<br>MTM</span><svg class="icon ic"><use href="#ic-bar-chart"></use></svg></div>
+    </div>
+  </div>
+
+  <!-- ================= BOTTOM NAV ================= -->
+  <div class="bottomnav" id="bottomnav">
+    <button data-view="carteira"><svg class="icon ic"><use href="#ic-pie"></use></svg>Operações</button>
+    <button data-view="mercado"><svg class="icon ic"><use href="#ic-trending-up"></use></svg>Mercados</button>
+    <button data-view="boleta" class="active"><svg class="icon ic"><use href="#ic-repeat"></use></svg>Simulação</button>
+    <button data-view="ferramentas"><svg class="icon ic"><use href="#ic-grid"></use></svg>Ferramentas</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- ============ POP-UP: LOGÍSTICA (7.2) ============ -->
+<div class="modal-overlay" id="logisticaModal" onclick="if(event.target===this) closeLogisticaModal()">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div>
+        <h2>Logística e Entregas</h2>
+        <div class="sub">Ao concluir, o resumo ponderado volta para a boleta</div>
+      </div>
+      <button class="icon-btn" onclick="closeLogisticaModal()" title="Fechar"><svg class="icon"><use href="#ic-x"></use></svg></button>
+    </div>
+    <div class="modal-body">
+
+      <div class="modal-section rotas" id="sec-rotas">
+        <div class="modal-section-head">
+          <span class="t">Logística · Rotas</span>
+          <button class="pill-btn" onclick="addRoute()">+ Rota</button>
+        </div>
+        <div class="modal-section-body">
+          <div class="hb-entregas" id="logistica-list" style="padding:0;">
+            <div class="hb-card hb-route-card" data-route-index="1">
+              <div class="hb-card-top">
+                <span class="hb-route-tag">Rota 1</span>
+                <span class="hb-route-summary">Americana - SP (ExWorks) → Santos - SP (FCA) · R$100,00/ton</span>
+                <button class="hb-x" onclick="removeRoute(this)" title="Remover rota"><svg class="icon"><use href="#ic-x"></use></svg></button>
+              </div>
+              <div class="hb-card-body">
+                <details class="acc-mini">
+                  <summary>
+                    <span class="lbl-closed">Editar rota</span><span class="lbl-open">Recolher</span>
+                    <svg class="icon chev"><use href="#ic-chevron-right"></use></svg>
+                  </summary>
+                  <div class="acc-mini-body">
+                    <div class="field-row" style="display:flex; gap:8px;">
+                      <div class="field" style="flex:1; min-width:0;">
+                        <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:5px;">Origem</label>
+                        <select class="leg-local" data-route-field="local-origem" style="width:100%; background:var(--bg2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:12.5px; font-weight:600;">
+                          <option value="">Selecione…</option>
+                          <option selected>Americana - SP</option>
+                          <option>Sorriso - MT</option>
+                          <option>Rondonópolis - MT</option>
+                          <option>Goiânia - GO</option>
+                          <option>Luís Eduardo Magalhães - BA</option>
+                        </select>
+                      </div>
+                      <div class="field" style="flex:0 0 92px;">
+                        <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:5px;">Incoterm</label>
+                        <select data-route-field="incoterm-origem" style="width:100%; background:var(--bg2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:12.5px; font-weight:600;">
+                          <option selected>ExWorks</option><option>FCA</option><option>FOB</option><option>CIF</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="field-row" style="display:flex; gap:8px; margin-top:8px;">
+                      <div class="field" style="flex:1; min-width:0;">
+                        <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:5px;">Destino</label>
+                        <select class="leg-local" data-route-field="local-destino" style="width:100%; background:var(--bg2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:12.5px; font-weight:600;">
+                          <option value="">Selecione…</option>
+                          <option selected>Santos - SP</option>
+                          <option>Paranaguá - PR</option>
+                          <option>Itaqui - MA</option>
+                          <option>Rio Grande - RS</option>
+                          <option>Salvador - BA</option>
+                        </select>
+                      </div>
+                      <div class="field" style="flex:0 0 92px;">
+                        <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:5px;">Incoterm</label>
+                        <select data-route-field="incoterm-destino" style="width:100%; background:var(--bg2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:12.5px; font-weight:600;">
+                          <option selected>FCA</option><option>CIF</option><option>FOB</option><option>ExWorks</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="hb-price-line">
+                      <span class="l">Frete $ / Ton</span>
+                      <input type="text" data-route-field="preco" value="100,00">
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+          <div class="hb-total-line" style="margin:10px 0 0;">
+            <span class="l">Total Frete <span class="badge" id="routes-total-count">1 rota</span></span>
+            <span class="v" id="routes-total-value">R$ 100,00 /ton</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section entregas" id="sec-entregas">
+        <div class="modal-section-head">
+          <span class="t">Entregas</span>
+          <div class="btns">
+            <button class="pill-btn" onclick="addEntrega()">+ Entrega</button>
+            <button class="pill-btn ghost" type="button" onclick="distribuirEntregas()">Distribuir</button>
+          </div>
+        </div>
+        <div class="modal-section-body">
+          <!-- (7.4) Entregas resumidas: quantidade + data final. O resto fica recolhido. -->
+          <div class="hb-entregas" id="entregas-list" style="padding:0;"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-primary" onclick="closeLogisticaModal()">Concluído</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ POP-UP: ANTES DE ENVIAR (5.1 / 5.4 / 6.5 / 6.6) ============ -->
+<div class="modal-overlay" id="sendModal" onclick="if(event.target===this) closeSendModal()">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div>
+        <h2 id="sendModalTitle">Salvar ordem</h2>
+        <div class="sub">Dados que o sistema precisa, fora do cálculo da margem</div>
+      </div>
+      <button class="icon-btn" onclick="closeSendModal()" title="Fechar"><svg class="icon"><use href="#ic-x"></use></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="recap">
+        <div><span class="l">Quantidade</span><span class="v" id="recap-qty">—</span></div>
+        <div><span class="l">Preço</span><span class="v" id="recap-preco">—</span></div>
+        <div><span class="l">Margem</span><span class="v" id="recap-pnl">—</span></div>
+      </div>
+      <div class="form-list">
+        <!-- (5.2) Fornecedor é texto livre: o originador digita, o backoffice arruma -->
+        <div class="form-field">
+          <label>Fornecedor / Contraparte <span class="opt">— texto livre</span></label>
+          <input type="text" id="send-fornecedor" placeholder="ex. Fazenda Boa Vista, João do algodão…">
+        </div>
+        <div class="form-field">
+          <label>Cliente / Book de destino</label>
+          <select id="send-cliente">
+            <option selected>Book Algodão · Originação</option>
+            <option>Book Algodão · Exportação</option>
+            <option>Book Terceiros</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Observações <span class="opt">— opcional</span></label>
+          <input type="text" id="send-obs" placeholder="ex. sujeito a classificação na chegada">
+        </div>
+      </div>
+      <div class="form-note">
+        Qualidade, safra e mercado já foram informados na simulação e seguem junto.
+        O motor completo de cálculo roda no OneClick desktop após a aprovação.
+      </div>
+    </div>
+    <div class="modal-foot" id="sendModalFoot"></div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // Navegação entre views
+  // ============================================================
+  var VIEW_TITLES = { boleta: 'Nova Simulação', mercado: 'Curvas de Mercado', carteira: 'Operações', ferramentas: 'Ferramentas' };
+  function goTo(view) {
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+    var el = document.getElementById('view-' + view);
+    if (el) el.classList.add('active');
+    document.querySelectorAll('#bottomnav button').forEach(function (b) { b.classList.toggle('active', b.dataset.view === view); });
+    var t = document.getElementById('topbar-title');
+    if (t) t.textContent = editingId ? 'Ajustando simulação' : (VIEW_TITLES[view] || 'OneClick');
+    // A faixa de margem só faz sentido na boleta — nas outras views ela some
+    var bar = document.getElementById('summaryBar');
+    if (bar) bar.style.display = (view === 'boleta') ? '' : 'none';
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('#bottomnav button').forEach(function (b) {
+    b.addEventListener('click', function () { goTo(b.dataset.view); });
+  });
+
+  function toggleTheme() {
+    var isLight = document.body.classList.toggle('light');
+    var sun = document.getElementById('themeIconSun');
+    var moon = document.getElementById('themeIconMoon');
+    if (sun) sun.style.display = isLight ? 'none' : '';
+    if (moon) moon.style.display = isLight ? '' : 'none';
+  }
+
+  // ============================================================
+  // Helpers
+  // ============================================================
+  function parseBRL(v) { return parseFloat(String(v || '0').replace(/\./g, '').replace(',', '.')) || 0; }
+  function formatBRL(n) { return 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function formatBRLPlain(n) { return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fmtQty(n) { return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fmtCompact(n) {
+    var abs = Math.abs(n);
+    if (abs >= 1e6) return (n / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'M';
+    if (abs >= 1e3) return (n / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + 'k';
+    return n.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
+  function getNum(id) {
+    var el = document.getElementById(id);
+    if (!el) return 0;
+    var raw = (el.value !== undefined ? el.value : el.textContent || '').toString().trim();
+    var n = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function stepQty(delta) {
+    var el = document.getElementById('calc-quantidade');
+    var v = parseBRL(el.value) + delta;
+    if (v < 0) v = 0;
+    el.value = String(Math.round(v));
+    recalc();
+  }
+  function stepPreco(delta) {
+    var el = document.getElementById('calc-preco');
+    var v = parseBRL(el.value) + delta;
+    if (v < 0) v = 0;
+    el.value = v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    recalc();
+  }
+
+  // ============================================================
+  // (4.2) Precificação como segmented control
+  // ============================================================
+  var currentUnit = 'BRL_LB';
+  var UNIT_LABELS = { USD_TON: 'USD/t', BRL_LB: 'BRL/Lb', USD_LB: 'USD/Lb', USD_TON2: 'US$/Ton' };
+  document.querySelectorAll('#precSeg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#precSeg button').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      currentUnit = b.dataset.unit;
+      recalc();
+    });
+  });
+
+  // ============================================================
+  // (5.3) Resumo do Ativo
+  // ============================================================
+  function updateAtivoSummary() {
+    var q = document.getElementById('calc-qualidade').value;
+    var s = document.getElementById('calc-safra').value;
+    var m = document.getElementById('calc-mercado').value;
+    var el = document.getElementById('ativo-summary');
+    if (el) el.textContent = q + ' · ' + s + ' ' + m;
+  }
+  ['calc-qualidade', 'calc-safra', 'calc-mercado'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', updateAtivoSummary);
+  });
+
+  // ============================================================
+  // Curvas de mercado
+  // ============================================================
+  var FACTOR_LB_TON = 2204.62;
+  var MARKET_CURVES = {
+    H25: { commodity: 67.51, fx: 5.7019 }, J25: { commodity: null, fx: 5.7336 },
+    K25: { commodity: 68.82, fx: 5.7649 }, M25: { commodity: null, fx: 5.8048 },
+    N25: { commodity: 69.69, fx: 5.8426 }, Q25: { commodity: null, fx: 5.8875 },
+    U25: { commodity: null, fx: 5.9318 }, V25: { commodity: 70.19, fx: null },
+    X25: { commodity: null, fx: 6.0215 }, Z25: { commodity: 69.87, fx: 6.0599 },
+    F26: { commodity: null, fx: 6.1034 }, H26: { commodity: 70.86, fx: 6.1907 },
+    K26: { commodity: 71.52, fx: 6.2805 }, N26: { commodity: 72.10, fx: 6.3550 },
+    H27: { commodity: 73.40, fx: 6.4300 }, K27: { commodity: 74.05, fx: 6.5100 },
+    N27: { commodity: 74.70, fx: 6.5900 }
+  };
+  var DEFAULT_BOARD = 'K26';
+  var BOARD_LIST = Object.keys(MARKET_CURVES);
+
+  function populateSerieBolsaOptions() {
+    var sel = document.getElementById('calc-serie-bolsa');
+    if (!sel) return;
+    sel.innerHTML = BOARD_LIST.map(function (b) {
+      return '<option value="' + b + '"' + (b === DEFAULT_BOARD ? ' selected' : '') + '>ALGODÃO ' + b + '</option>';
+    }).join('');
+  }
+
+  // ============================================================
+  // ROTAS
+  // ============================================================
+  var routeIndex = 1;
+  var DEFAULT_NEW_ROUTE_PRICE = 100;
+  var LOCAIS_ORIGEM = ['Americana - SP', 'Sorriso - MT', 'Rondonópolis - MT', 'Goiânia - GO', 'Luís Eduardo Magalhães - BA'];
+  var LOCAIS_DESTINO = ['Santos - SP', 'Paranaguá - PR', 'Itaqui - MA', 'Rio Grande - RS', 'Salvador - BA'];
+  var INCO = ['ExWorks', 'FCA', 'FOB', 'CIF'];
+
+  function selHtml(list, cur) {
+    return list.map(function (v) { return '<option' + (v === cur ? ' selected' : '') + '>' + v + '</option>'; }).join('');
+  }
+  var FIELD_STYLE = 'width:100%; background:var(--bg2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:12.5px; font-weight:600;';
+  var LABEL_STYLE = 'display:block; font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:5px;';
+
+  function buildRouteCardHtml(idx, o) {
+    return [
+      '<div class="hb-card hb-route-card" data-route-index="' + idx + '">',
+      '  <div class="hb-card-top">',
+      '    <span class="hb-route-tag">Rota ' + idx + '</span>',
+      '    <span class="hb-route-summary">Nova rota — defina origem e destino</span>',
+      '    <button class="hb-x" onclick="removeRoute(this)" title="Remover rota"><svg class="icon"><use href="#ic-x"></use></svg></button>',
+      '  </div>',
+      '  <div class="hb-card-body">',
+      '    <details class="acc-mini" open>',
+      '      <summary><span class="lbl-closed">Editar rota</span><span class="lbl-open">Recolher</span><svg class="icon chev"><use href="#ic-chevron-right"></use></svg></summary>',
+      '      <div class="acc-mini-body">',
+      '        <div style="display:flex; gap:8px;">',
+      '          <div style="flex:1; min-width:0;"><label style="' + LABEL_STYLE + '">Origem</label>',
+      '            <select class="leg-local" data-route-field="local-origem" style="' + FIELD_STYLE + '"><option value="">Selecione…</option>' + selHtml(LOCAIS_ORIGEM, o.localOrigem) + '</select></div>',
+      '          <div style="flex:0 0 92px;"><label style="' + LABEL_STYLE + '">Incoterm</label>',
+      '            <select data-route-field="incoterm-origem" style="' + FIELD_STYLE + '">' + selHtml(INCO, o.incotermOrigem) + '</select></div>',
+      '        </div>',
+      '        <div style="display:flex; gap:8px; margin-top:8px;">',
+      '          <div style="flex:1; min-width:0;"><label style="' + LABEL_STYLE + '">Destino</label>',
+      '            <select class="leg-local" data-route-field="local-destino" style="' + FIELD_STYLE + '"><option value="">Selecione…</option>' + selHtml(LOCAIS_DESTINO, o.localDestino) + '</select></div>',
+      '          <div style="flex:0 0 92px;"><label style="' + LABEL_STYLE + '">Incoterm</label>',
+      '            <select data-route-field="incoterm-destino" style="' + FIELD_STYLE + '">' + selHtml(INCO, o.incotermDestino) + '</select></div>',
+      '        </div>',
+      '        <div class="hb-price-line"><span class="l">Frete $ / Ton</span><input type="text" data-route-field="preco" value="' + o.preco + '"></div>',
+      '      </div>',
+      '    </details>',
+      '  </div>',
+      '</div>'
+    ].join('');
+  }
+
+  function getRouteField(idx, f) {
+    var card = document.querySelector('#logistica-list .hb-route-card[data-route-index="' + idx + '"]');
+    if (!card) return '';
+    var el = card.querySelector('[data-route-field="' + f + '"]');
+    return el ? el.value : '';
+  }
+  function getRouteSummaryText(idx) {
+    if (!document.querySelector('#logistica-list .hb-route-card[data-route-index="' + idx + '"]')) return 'Rota não encontrada';
+    var o = getRouteField(idx, 'local-origem') || '—';
+    var d = getRouteField(idx, 'local-destino') || '—';
+    return o + ' (' + (getRouteField(idx, 'incoterm-origem') || '—') + ') → ' + d + ' (' + (getRouteField(idx, 'incoterm-destino') || '—') + ') · R$' + (getRouteField(idx, 'preco') || '0,00') + '/ton';
+  }
+  function getRouteShortText(idx) {
+    if (!document.querySelector('#logistica-list .hb-route-card[data-route-index="' + idx + '"]')) return '—';
+    return (getRouteField(idx, 'local-origem') || '—') + ' → ' + (getRouteField(idx, 'local-destino') || '—');
+  }
+  function getRouteOptionsHtml(selectedIdx) {
+    var routes = Array.prototype.slice.call(document.querySelectorAll('#logistica-list .hb-route-card'));
+    if (!routes.length) return '<option value="">—</option>';
+    return routes.map(function (r) {
+      var idx = r.dataset.routeIndex;
+      return '<option value="' + idx + '"' + (String(idx) === String(selectedIdx) ? ' selected' : '') + '>Rota ' + idx + '</option>';
+    }).join('');
+  }
+  function updateRouteSummary(routeCard) {
+    var idx = routeCard.dataset.routeIndex;
+    var s = routeCard.querySelector('.hb-route-summary');
+    if (s) s.textContent = getRouteSummaryText(idx);
+    document.querySelectorAll('#entregas-list .hb-entrega-card[data-route-index="' + idx + '"]').forEach(updateEntregaSummary);
+  }
+  function addRoute() {
+    routeIndex++;
+    var list = document.getElementById('logistica-list');
+    if (!list) return;
+    list.insertAdjacentHTML('beforeend', buildRouteCardHtml(routeIndex, {
+      localOrigem: '', incotermOrigem: 'ExWorks', localDestino: '', incotermDestino: 'FCA',
+      preco: formatBRLPlain(DEFAULT_NEW_ROUTE_PRICE)
+    }));
+    var newCard = list.lastElementChild;
+    if (newCard) updateRouteSummary(newCard);
+    refreshEntregaRouteSelects();
+    recalc();
+    showToast('Rota ' + routeIndex + ' adicionada');
+  }
+  function removeRoute(btn) {
+    var card = btn.closest('.hb-route-card');
+    if (!card) return;
+    if (document.querySelectorAll('#logistica-list .hb-route-card').length <= 1) { showToast('É necessário pelo menos 1 rota.'); return; }
+    card.remove();
+    refreshEntregaRouteSelects();
+    recalc();
+  }
+
+  // ============================================================
+  // (7.4) ENTREGAS — resumidas: quantidade + entrega final visíveis,
+  // o resto fica atrás de "Mais detalhes".
+  // ============================================================
+  var ENTREGAS_SEED = [
+    { routeIdx: 1, ratio: 0.5, entregaFinal: '08-mai-2026', mesRef: 'mai-2026', bolsa: 'K26', basis: '—', dataPgto: '16-mai-2026', fx: 'K26' },
+    { routeIdx: 1, ratio: 0.5, entregaFinal: '27-abr-2026', mesRef: 'abr-2026', bolsa: 'H26', basis: '—', dataPgto: '05-mai-2026', fx: 'H26' }
+  ];
+
+  function boardOptions(cur) {
+    return BOARD_LIST.map(function (b) { return '<option' + (b === cur ? ' selected' : '') + '>' + b + '</option>'; }).join('');
+  }
+
+  function buildEntregaCardHtml(o) {
+    var boardSelStyle = 'width:100%; background:transparent; border:none; color:var(--text); font-size:11.5px; font-weight:700; padding:0; margin-top:1px; appearance:none; -webkit-appearance:none;';
+    return [
+      '<div class="hb-card hb-entrega-card" data-route-index="' + o.routeIdx + '" data-ratio="' + o.ratio + '">',
+      '  <div class="hb-card-top">',
+      '    <span class="entrega-badge">Entrega</span>',
+      '    <span class="hb-route-summary">—</span>',
+      '    <button class="hb-x" onclick="removeEntrega(this)" title="Remover entrega"><svg class="icon"><use href="#ic-x"></use></svg></button>',
+      '  </div>',
+      '  <div class="hb-card-body">',
+      '    <div class="entrega-rota-row"><span class="l">Rota vinculada</span>',
+      '      <select class="entrega-rota-select" data-route-select>' + getRouteOptionsHtml(o.routeIdx) + '</select></div>',
+      '    <div class="hb-detail-grid" style="grid-template-columns:repeat(3,1fr);">',
+      '      <div class="hb-detail qty"><span class="l">Quant.</span><div class="v entrega-qty">0,00</div></div>',
+      '      <div class="hb-detail"><span class="l">Entrega Final</span><input value="' + o.entregaFinal + '"></div>',
+      '      <div class="hb-detail"><span class="l">Tela Bolsa</span><select class="entrega-bolsa" style="' + boardSelStyle + '">' + boardOptions(o.bolsa) + '</select></div>',
+      '    </div>',
+      '    <details class="acc-mini">',
+      '      <summary><span class="lbl-closed">Mais detalhes</span><span class="lbl-open">Recolher detalhes</span><svg class="icon chev"><use href="#ic-chevron-right"></use></svg></summary>',
+      '      <div class="acc-mini-body hb-detail-grid">',
+      '        <div class="hb-detail"><span class="l">Mês Ref.</span><input value="' + o.mesRef + '"></div>',
+      '        <div class="hb-detail"><span class="l">Tela Basis</span><input value="' + o.basis + '"></div>',
+      '        <div class="hb-detail"><span class="l">Data Pgto</span><input value="' + o.dataPgto + '"></div>',
+      '        <div class="hb-detail"><span class="l">Tela Fx</span><select class="entrega-fx" style="' + boardSelStyle + '">' + boardOptions(o.fx) + '</select></div>',
+      '      </div>',
+      '    </details>',
+      '  </div>',
+      '</div>'
+    ].join('');
+  }
+
+  function renumberEntregas() {
+    Array.prototype.slice.call(document.querySelectorAll('#entregas-list .hb-entrega-card')).forEach(function (c, i) {
+      var badge = c.querySelector('.entrega-badge');
+      if (badge) badge.textContent = 'Entrega ' + (i + 1);
+    });
+  }
+  function updateEntregaSummary(card) {
+    var sel = card.querySelector('[data-route-select]');
+    var idx = sel ? sel.value : card.dataset.routeIndex;
+    card.dataset.routeIndex = idx;
+    var s = card.querySelector('.hb-route-summary');
+    if (s) s.textContent = getRouteShortText(idx);
+  }
+  function refreshEntregaRouteSelects() {
+    var routeIdxs = Array.prototype.slice.call(document.querySelectorAll('#logistica-list .hb-route-card')).map(function (r) { return r.dataset.routeIndex; });
+    var multi = routeIdxs.length > 1;
+    document.querySelectorAll('#entregas-list .hb-entrega-card').forEach(function (card) {
+      var sel = card.querySelector('[data-route-select]');
+      if (!sel) return;
+      var current = sel.value;
+      if (routeIdxs.indexOf(current) === -1) current = routeIdxs[0] || '';
+      sel.innerHTML = getRouteOptionsHtml(current);
+      updateEntregaSummary(card);
+      var row = card.querySelector('.entrega-rota-row');
+      if (row) row.style.display = multi ? 'flex' : 'none';
+    });
+  }
+  function addEntrega() {
+    var routesList = document.getElementById('logistica-list');
+    var list = document.getElementById('entregas-list');
+    if (!list || !routesList) return;
+    var routeCards = Array.prototype.slice.call(routesList.querySelectorAll('.hb-route-card'));
+    if (!routeCards.length) { showToast('Cadastre uma rota primeiro.'); return; }
+    var lastRouteIdx = routeCards[routeCards.length - 1].dataset.routeIndex;
+    list.insertAdjacentHTML('beforeend', buildEntregaCardHtml({
+      routeIdx: lastRouteIdx, ratio: 0, entregaFinal: '—', mesRef: '—', bolsa: DEFAULT_BOARD, basis: '—', dataPgto: '—', fx: DEFAULT_BOARD
+    }));
+    var newCard = list.lastElementChild;
+    if (newCard) updateEntregaSummary(newCard);
+    renumberEntregas();
+    refreshEntregaRouteSelects();
+    distribuirEntregas();
+    showToast('Entrega adicionada');
+  }
+  function removeEntrega(btn) {
+    var card = btn.closest('.hb-entrega-card');
+    if (!card) return;
+    if (document.querySelectorAll('#entregas-list .hb-entrega-card').length <= 1) { showToast('É necessário pelo menos 1 entrega.'); return; }
+    card.remove();
+    renumberEntregas();
+    distribuirEntregas();
+  }
+  // Divide a quantidade total igualmente entre as entregas
+  function distribuirEntregas() {
+    var cards = Array.prototype.slice.call(document.querySelectorAll('#entregas-list .hb-entrega-card'));
+    if (!cards.length) return;
+    var r = 1 / cards.length;
+    cards.forEach(function (c) { c.dataset.ratio = r; });
+    recalc();
+  }
+
+  // Listeners delegados
+  document.getElementById('logistica-list').addEventListener('change', function (e) {
+    if (!e.target.dataset.routeField) return;
+    var card = e.target.closest('.hb-route-card');
+    if (card) updateRouteSummary(card);
+    recalc();
+  });
+  document.getElementById('logistica-list').addEventListener('input', function (e) {
+    if (e.target.dataset.routeField === 'preco') recalc();
+  });
+  document.getElementById('entregas-list').addEventListener('change', function (e) {
+    if (e.target.dataset.routeSelect !== undefined) {
+      var card = e.target.closest('.hb-entrega-card');
+      if (card) updateEntregaSummary(card);
+    }
+    recalc();
+  });
+
+  // ============================================================
+  // (7.2) Pop-up de logística — abre já rolado na seção pedida
+  // ============================================================
+  function openLogisticaModal(section) {
+    var modal = document.getElementById('logisticaModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (section === 'entregas') {
+      setTimeout(function () {
+        var t = document.getElementById('sec-entregas');
+        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
+    }
+  }
+  function closeLogisticaModal() {
+    var modal = document.getElementById('logisticaModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    recalc();
+    // (7.5) Ao concluir, o consolidado ponderado "pisca" pra sinalizar que atualizou
+    var w = document.querySelector('.wavg');
+    if (w) { w.style.borderColor = 'var(--blue)'; setTimeout(function () { w.style.borderColor = ''; }, 900); }
+  }
+
+  // ============================================================
+  // CÁLCULO — margem da ORDEM em tela (8.4)
+  // Árvore: quantidade × preço -> notional; curva da tela de cada entrega ->
+  // MTM; ponderação por quantidade -> cotação e FX médios (7.5 / 7.6).
+  // ============================================================
+  function recalc() {
+    var Q = getNum('calc-quantidade');
+    var P = getNum('calc-preco');
+    var isBRL = currentUnit.indexOf('BRL') === 0;
+    var isPerLb = (currentUnit === 'BRL_LB' || currentUnit === 'USD_LB');
+
+    var unitHint = document.getElementById('preco-unit-hint');
+    if (unitHint) unitHint.textContent = UNIT_LABELS[currentUnit] || currentUnit;
+
+    var pricePerTon = isPerLb ? P * FACTOR_LB_TON : P;
+    var notionalContract = Q * pricePerTon;
+
+    var boardSel = document.getElementById('calc-serie-bolsa');
+    var refBoard = boardSel ? boardSel.value : DEFAULT_BOARD;
+    var refCurve = MARKET_CURVES[refBoard] || {};
+    var refFx = refCurve.fx || 1;
+
+    var notionalBRL = isBRL ? notionalContract : notionalContract * refFx;
+    var notionalUSD = isBRL ? notionalContract / refFx : notionalContract;
+
+    // Ticker de referência (2.4)
+    var priceEl = document.getElementById('ticker-price');
+    if (priceEl) priceEl.textContent = (refCurve.commodity != null) ? refCurve.commodity.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+
+    // (1.3) Valor monetário embaixo da quantidade — substitui o card de Notional
+    var qtyHint = document.getElementById('qty-dual-hint');
+    if (qtyHint) qtyHint.textContent = 'ton · ≈ R$ ' + fmtCompact(notionalBRL);
+
+    // Percorre as entregas
+    var cards = Array.prototype.slice.call(document.querySelectorAll('#entregas-list .hb-entrega-card'));
+    var totalMtMBrl = 0, totalMtMUsd = 0, totalNotionalUsd = 0;
+    var weightedFxSum = 0, weightedCotSum = 0, qtySum = 0;
+
+    cards.forEach(function (card) {
+      var ratio = parseFloat(card.dataset.ratio);
+      if (isNaN(ratio) || !ratio) ratio = 1 / (cards.length || 1);
+      var qtyRow = Q * ratio;
+      var qtyCell = card.querySelector('.entrega-qty');
+      if (qtyCell) qtyCell.textContent = fmtQty(qtyRow);
+
+      var boardEl = card.querySelector('.entrega-bolsa');
+      var board = boardEl ? String(boardEl.value).trim() : null;
+      var curve = board ? MARKET_CURVES[board] : null;
+
+      var fxEl = card.querySelector('.entrega-fx');
+      var fxBoard = fxEl ? String(fxEl.value).trim() : board;
+      var fxCurve = fxBoard ? MARKET_CURVES[fxBoard] : null;
+      var fx = (fxCurve && fxCurve.fx) ? fxCurve.fx : (curve && curve.fx ? curve.fx : null);
+
+      var notionalRowContract = qtyRow * pricePerTon;
+      var notionalRowUsd = isBRL ? (fx ? notionalRowContract / fx : null) : notionalRowContract;
+
+      var mtmRowUsd = null;
+      if (curve && curve.commodity != null && notionalRowUsd != null) {
+        var marketUsdPerTon = (curve.commodity / 100) * FACTOR_LB_TON;
+        mtmRowUsd = marketUsdPerTon * qtyRow - notionalRowUsd;
+      }
+      if (notionalRowUsd != null) totalNotionalUsd += notionalRowUsd;
+      if (fx) { weightedFxSum += fx * qtyRow; qtySum += qtyRow; }
+      if (curve && curve.commodity != null) weightedCotSum += curve.commodity * qtyRow;
+      if (mtmRowUsd != null) totalMtMUsd += mtmRowUsd;
+      if (mtmRowUsd != null && fx) totalMtMBrl += mtmRowUsd * fx;
+    });
+
+    // Frete entra na margem: custo por tonelada × quantidade total
+    var routeCards = Array.prototype.slice.call(document.querySelectorAll('#logistica-list .hb-route-card'));
+    var freteTon = 0;
+    routeCards.forEach(function (c) {
+      var el = c.querySelector('[data-route-field="preco"]');
+      freteTon += el ? parseBRL(el.value) : 0;
+    });
+    var freteTotalBrl = freteTon * Q;
+    totalMtMBrl -= freteTotalBrl;
+    if (refFx) totalMtMUsd -= freteTotalBrl / refFx;
+
+    var avgFx = qtySum > 0 ? weightedFxSum / qtySum : 0;
+    var avgCot = qtySum > 0 ? weightedCotSum / qtySum : 0;
+
+    // ---- (2.2) Referências ponderadas no topo ----
+    var cotAvgEl = document.getElementById('prev-cot-avg');
+    if (cotAvgEl) cotAvgEl.textContent = avgCot > 0 ? avgCot.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ¢/lb' : '—';
+    var fxAvgEl = document.getElementById('prev-fx-avg');
+    if (fxAvgEl) fxAvgEl.textContent = avgFx > 0 ? 'R$ ' + avgFx.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '—';
+    var fxValEl = document.getElementById('prev-fx-val');
+    if (fxValEl) fxValEl.textContent = 'US$ ' + fmtCompact(totalNotionalUsd);
+
+    // ---- (1.4) Herói: margem da ordem ----
+    var marginPct = notionalBRL > 0 ? (totalMtMBrl / notionalBRL) * 100 : 0;
+    var pnlEl = document.getElementById('prev-pnl-num');
+    var pnlSubEl = document.getElementById('prev-pnl-sub');
+    var pos = totalMtMBrl >= 0;
+    if (pnlEl) {
+      pnlEl.textContent = (pos ? '+' : '−') + 'R$ ' + fmtCompact(Math.abs(totalMtMBrl));
+      pnlEl.classList.toggle('pos', pos);
+      pnlEl.classList.toggle('neg', !pos);
+    }
+    if (pnlSubEl) {
+      pnlSubEl.textContent = (pos ? '+' : '−') + 'US$ ' + fmtCompact(Math.abs(totalMtMUsd)) +
+        ' · ' + (pos ? '+' : '−') + Math.abs(marginPct).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '% sobre o notional';
+      pnlSubEl.classList.toggle('pos', pos);
+      pnlSubEl.classList.toggle('neg', !pos);
+    }
+
+    // ---- (7.5) Linha consolidada ----
+    var setTxt = function (id, txt) { var e = document.getElementById(id); if (e) e.textContent = txt; };
+    setTxt('wavg-qty', fmtQty(Q) + ' t');
+    setTxt('wavg-cot', avgCot > 0 ? avgCot.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—');
+    setTxt('wavg-fx', avgFx > 0 ? avgFx.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '—');
+    setTxt('wavg-frete', 'R$ ' + fmtCompact(freteTotalBrl));
+    var nEnt = cards.length;
+    setTxt('wavg-badge', nEnt + ' entrega' + (nEnt === 1 ? '' : 's') + ' · ponderado');
+
+    // ---- (7.2) Resumos das duas linhas da boleta ----
+    var nRotas = routeCards.length;
+    var logEl = document.getElementById('logistica-summary');
+    if (logEl) logEl.innerHTML = nRotas + ' rota' + (nRotas === 1 ? '' : 's') + ' · <span class="dim">' + formatBRL(freteTon) + '/ton</span>';
+    var entEl = document.getElementById('entregas-summary');
+    if (entEl) {
+      var last = cards.length ? (cards[cards.length - 1].querySelector('.hb-detail input') || {}).value : '';
+      entEl.innerHTML = nEnt + ' entrega' + (nEnt === 1 ? '' : 's') + (last ? ' · <span class="dim">até ' + last + '</span>' : '');
+    }
+
+    // Totais do bloco de rotas dentro do modal
+    setTxt('routes-total-count', nRotas + ' rota' + (nRotas === 1 ? '' : 's'));
+    setTxt('routes-total-value', formatBRL(freteTon) + ' /ton');
+  }
+
+  ['calc-quantidade', 'calc-preco', 'calc-serie-bolsa'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) { el.addEventListener('input', recalc); el.addEventListener('change', recalc); }
+  });
+
+  // ============================================================
+  // (6.1 / 6.2 / 6.5 / 6.6) Fluxo: Salvar ordem / Enviar / Descartar
+  // ============================================================
+  var pendingAction = 'save';
+  function openSendModal(action) {
+    pendingAction = action;
+    var isSave = (action === 'save');
+    document.getElementById('sendModalTitle').textContent = isSave ? 'Salvar ordem' : 'Enviar para aprovação';
+
+    document.getElementById('recap-qty').textContent = fmtQty(getNum('calc-quantidade')) + ' t';
+    document.getElementById('recap-preco').textContent = document.getElementById('calc-preco').value + ' ' + (UNIT_LABELS[currentUnit] || '');
+    var pnlEl = document.getElementById('prev-pnl-num');
+    var recapPnl = document.getElementById('recap-pnl');
+    recapPnl.textContent = pnlEl.textContent;
+    recapPnl.className = 'v ' + (pnlEl.classList.contains('pos') ? 'pos' : 'neg');
+
+    var foot = document.getElementById('sendModalFoot');
+    foot.innerHTML = isSave
+      ? '<button type="button" class="btn-primary" onclick="commitOrder(\'save\')">Salvar ordem</button>' +
+        '<div style="height:8px;"></div>' +
+        '<button type="button" class="btn-ghost" onclick="closeSendModal()">Voltar para a simulação</button>'
+      : '<button type="button" class="btn-primary green" onclick="commitOrder(\'send\')">Enviar para aprovação</button>' +
+        '<div style="height:8px;"></div>' +
+        '<button type="button" class="btn-ghost" onclick="commitOrder(\'hedge\')">Enviar com hedge</button>';
+
+    document.getElementById('sendModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSendModal() {
+    document.getElementById('sendModal').classList.remove('open');
+    document.body.style.overflow = '';
+    resetSwipe();
+  }
+
+  function commitOrder(kind) {
+    var fornecedor = document.getElementById('send-fornecedor').value.trim();
+    var cliente = document.getElementById('send-cliente').value;
+    var qty = getNum('calc-quantidade');
+    var pnlEl = document.getElementById('prev-pnl-num');
+    var pos = pnlEl.classList.contains('pos');
+    var nRotas = document.querySelectorAll('#logistica-list .hb-route-card').length;
+    var nEnt = document.querySelectorAll('#entregas-list .hb-entrega-card').length;
+
+    var meta = ['Compra', fmtQty(qty) + ' ton',
+      document.getElementById('calc-qualidade').value + ' ' + document.getElementById('calc-safra').value,
+      nRotas + ' rota' + (nRotas === 1 ? '' : 's') + ' / ' + nEnt + ' entrega' + (nEnt === 1 ? '' : 's')];
+    if (fornecedor) meta.push(fornecedor);
+
+    var record = {
+      id: editingId || nextId(kind === 'save' ? 'SIM' : 'ORD'),
+      status: kind === 'save' ? 'sim' : 'pend',
+      meta: meta.join(' · '),
+      qty: fmtQty(qty) + ' t',
+      preco: document.getElementById('calc-preco').value + ' ' + (UNIT_LABELS[currentUnit] || ''),
+      pnl: pnlEl.textContent,
+      pos: pos,
+      hedge: (kind === 'hedge'),
+      cliente: cliente,
+      state: snapshotState(fornecedor)
+    };
+
+    var bucket = (kind === 'save') ? 'simulacoes' : 'ordens';
+    // Se estava editando, remove a versão antiga de onde quer que ela esteja
+    if (editingId) {
+      ['simulacoes', 'ordens', 'posicoes'].forEach(function (k) {
+        PORTFOLIO[k] = PORTFOLIO[k].filter(function (i) { return i.id !== editingId; });
+      });
+    }
+    PORTFOLIO[bucket].unshift(record);
+
+    closeSendModal();
+    setEditing(null);
+    renderCarteiraActive();
+
+    if (kind === 'save') {
+      showToast('Ordem salva em Operações · Simulações');
+    } else {
+      markSwipeSent(kind === 'hedge' ? 'Enviado com hedge!' : 'Enviado para aprovação!');
+      showToast(kind === 'hedge' ? 'Enviado para aprovação com hedge' : 'Enviado para aprovação');
+    }
+  }
+
+  var idCounter = { SIM: 7, ORD: 41 };
+  function nextId(prefix) {
+    idCounter[prefix] = (idCounter[prefix] || 0) + 1;
+    return prefix + '-2026-' + String(idCounter[prefix]).padStart(4, '0');
+  }
+
+  // Snapshot completo — permite reabrir a simulação exatamente como estava (6.4)
+  function snapshotState(fornecedor) {
+    return {
+      qtd: document.getElementById('calc-quantidade').value,
+      preco: document.getElementById('calc-preco').value,
+      unit: currentUnit,
+      qualidade: document.getElementById('calc-qualidade').value,
+      safra: document.getElementById('calc-safra').value,
+      mercado: document.getElementById('calc-mercado').value,
+      board: document.getElementById('calc-serie-bolsa').value,
+      rotasHtml: document.getElementById('logistica-list').innerHTML,
+      entregasHtml: document.getElementById('entregas-list').innerHTML,
+      routeIndex: routeIndex,
+      fornecedor: fornecedor || ''
+    };
+  }
+
+  // ============================================================
+  // (6.4) Reabrir uma simulação salva para ajuste
+  // ============================================================
+  var editingId = null;
+  function setEditing(id, label) {
+    editingId = id;
+    var banner = document.getElementById('editBanner');
+    var ref = document.getElementById('ordem-ref');
+    if (id) {
+      banner.classList.add('on');
+      document.getElementById('editBannerText').textContent = 'Ajustando ' + (label || id);
+      if (ref) ref.textContent = id;
+    } else {
+      banner.classList.remove('on');
+      if (ref) ref.textContent = 'Nova · Compra';
+    }
+    var t = document.getElementById('topbar-title');
+    if (t) t.textContent = id ? 'Ajustando simulação' : VIEW_TITLES.boleta;
+  }
+
+  function reopenItem(id) {
+    var item = null;
+    ['simulacoes', 'ordens', 'posicoes'].forEach(function (k) {
+      PORTFOLIO[k].forEach(function (i) { if (i.id === id) item = i; });
+    });
+    if (!item || !item.state) { showToast('Esta ordem não tem simulação vinculada.'); return; }
+    var s = item.state;
+
+    document.getElementById('calc-quantidade').value = s.qtd;
+    document.getElementById('calc-preco').value = s.preco;
+    document.getElementById('calc-qualidade').value = s.qualidade;
+    document.getElementById('calc-safra').value = s.safra;
+    document.getElementById('calc-mercado').value = s.mercado;
+    document.getElementById('calc-serie-bolsa').value = s.board;
+    document.getElementById('logistica-list').innerHTML = s.rotasHtml;
+    document.getElementById('entregas-list').innerHTML = s.entregasHtml;
+    document.getElementById('send-fornecedor').value = s.fornecedor || '';
+    routeIndex = s.routeIndex || 1;
+
+    currentUnit = s.unit;
+    document.querySelectorAll('#precSeg button').forEach(function (b) { b.classList.toggle('active', b.dataset.unit === currentUnit); });
+
+    updateAtivoSummary();
+    refreshEntregaRouteSelects();
+    renumberEntregas();
+    resetSwipe();
+    setEditing(item.id, item.id);
+    recalc();
+    goTo('boleta');
+    showToast('Simulação ' + item.id + ' reaberta para ajuste');
+  }
+
+  function clearForm(confirmFirst) {
+    if (confirmFirst && !window.confirm('Descartar a simulação atual e começar do zero?')) return;
+    document.getElementById('calc-quantidade').value = '200';
+    document.getElementById('calc-preco').value = '4,35';
+    document.getElementById('calc-qualidade').selectedIndex = 1;
+    document.getElementById('calc-safra').selectedIndex = 1;
+    document.getElementById('calc-mercado').selectedIndex = 1;
+    document.getElementById('calc-serie-bolsa').value = DEFAULT_BOARD;
+    document.getElementById('send-fornecedor').value = '';
+    document.getElementById('send-obs').value = '';
+    currentUnit = 'BRL_LB';
+    document.querySelectorAll('#precSeg button').forEach(function (b) { b.classList.toggle('active', b.dataset.unit === 'BRL_LB'); });
+    seedEntregas();
+    updateAtivoSummary();
+    resetSwipe();
+    setEditing(null);
+    recalc();
+  }
+
+  // ============================================================
+  // Swipe to send
+  // ============================================================
+  (function initSwipe() {
+    var track = document.getElementById('swipeTrack');
+    var knob = document.getElementById('swipeKnob');
+    var fill = document.getElementById('swipeFill');
+    if (!track || !knob) return;
+    var dragging = false, startX = 0, curX = 0;
+
+    function maxX() { return track.clientWidth - knob.offsetWidth - 8; }
+    function setX(x) { knob.style.transition = 'none'; knob.style.left = (4 + x) + 'px'; fill.style.width = (x + knob.offsetWidth) + 'px'; }
+    function onStart(e) {
+      if (track.classList.contains('sent')) return;
+      dragging = true;
+      startX = (e.touches ? e.touches[0].clientX : e.clientX);
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      curX = (e.touches ? e.touches[0].clientX : e.clientX) - startX;
+      if (curX < 0) curX = 0;
+      if (curX > maxX()) curX = maxX();
+      setX(curX);
+    }
+    function onEnd() {
+      if (!dragging) return;
+      dragging = false;
+      if (curX >= maxX() * 0.85) { openSendModal('send'); } else { resetSwipe(); }
+      curX = 0;
+    }
+    knob.addEventListener('mousedown', onStart);
+    knob.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
+  })();
+
+  function resetSwipe() {
+    var track = document.getElementById('swipeTrack');
+    var knob = document.getElementById('swipeKnob');
+    var fill = document.getElementById('swipeFill');
+    var label = document.getElementById('swipeLabel');
+    if (!track) return;
+    track.classList.remove('sent');
+    knob.style.transition = 'left .18s ease';
+    knob.style.left = '4px';
+    knob.innerHTML = '<svg class="icon"><use href="#ic-arrow-right"></use></svg>';
+    fill.style.width = '0';
+    label.textContent = 'Deslize para enviar p/ aprovação';
+  }
+  function markSwipeSent(text) {
+    var track = document.getElementById('swipeTrack');
+    var knob = document.getElementById('swipeKnob');
+    var fill = document.getElementById('swipeFill');
+    var label = document.getElementById('swipeLabel');
+    track.classList.add('sent');
+    knob.style.left = (track.clientWidth - knob.offsetWidth - 4) + 'px';
+    knob.innerHTML = '<svg class="icon"><use href="#ic-check"></use></svg>';
+    fill.style.width = '100%';
+    label.textContent = text;
+  }
+
+  // ============================================================
+  // Toast
+  // ============================================================
+  var toastTimer = null;
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2400);
+  }
+
+  // ============================================================
+  // (9.1) Mercados — mantido
+  // ============================================================
+  function renderMercado() {
+    var list = document.getElementById('mkt-list');
+    if (!list) return;
+    var prev = null;
+    list.innerHTML = BOARD_LIST.map(function (b) {
+      var c = MARKET_CURVES[b];
+      var chip = '<span class="var-chip na">—</span>';
+      if (c.commodity != null && prev != null) {
+        var d = c.commodity - prev;
+        var pct = (d / prev) * 100;
+        chip = '<span class="var-chip ' + (d >= 0 ? 'up' : 'down') + '">' + (d >= 0 ? '+' : '') +
+          pct.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%</span>';
+      }
+      if (c.commodity != null) prev = c.commodity;
+      return '<div class="mkt-row">' +
+        '<div class="sym-box"><div class="sym">ALGODÃO ' + b + '</div><div class="desc">ICE Cotton nº 2 · ¢/lb</div></div>' +
+        '<div class="quote-box"><div class="quote">' + (c.commodity != null ? c.commodity.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '—') + '</div>' +
+        '<div class="fx">Fx ' + (c.fx != null ? c.fx.toLocaleString('pt-BR', { minimumFractionDigits: 4 }) : '—') + '</div></div>' +
+        chip + '</div>';
+    }).join('');
+  }
+
+  // ============================================================
+  // (8.2 / 8.4) Operações — P&L por ordem, cards reabríveis
+  // ============================================================
+  var PORTFOLIO = {
+    simulacoes: [
+      { id: 'SIM-2026-0007', status: 'sim', meta: 'Compra · 200,00 ton · 31-3-36 GS 28 2026 · 1 rota / 2 entregas', qty: '200,00 t', preco: '4,35 BRL/Lb', pnl: '+R$ 42k', pos: true, state: null }
+    ],
+    ordens: [
+      { id: 'ORD-2026-0041', status: 'pend', meta: 'Compra · 300,00 ton · 32-3-36 GS 30 2026 · Faz. Boa Vista', qty: '300,00 t', preco: '4,52 BRL/Lb', pnl: '−R$ 78k', pos: false, state: null }
+    ],
+    posicoes: [
+      { id: 'ALG-2026-0142', status: 'aprov', meta: 'Compra · 500,00 ton · 31-3-36 GS 28 2026 · R. Bhering', qty: '500,00 t', preco: '4,21 BRL/Lb', pnl: '+R$ 265k', pos: true, state: null }
+    ]
+  };
+  var STATUS_LABEL = { sim: 'Simulação', pend: 'Em aprovação', aprov: 'Aprovado' };
+  var EMPTY_LABEL = { simulacoes: 'simulações salvas', ordens: 'ordens em aprovação', posicoes: 'posições' };
+
+  function renderCarteira(tab) {
+    var body = document.getElementById('port-body');
+    if (!body) return;
+    var items = PORTFOLIO[tab] || [];
+    if (!items.length) {
+      body.innerHTML = '<div class="empty-state"><svg class="icon"><use href="#ic-search"></use></svg><br>Não há ' + EMPTY_LABEL[tab] + ' no momento</div>';
+      return;
+    }
+    body.innerHTML = items.map(function (i) {
+      return '<div class="contract-card" onclick="reopenItem(\'' + i.id + '\')">' +
+        '<div class="top"><span class="sym">' + i.id + '</span>' +
+        '<span class="status ' + i.status + '">' + STATUS_LABEL[i.status] + (i.hedge ? ' + hedge' : '') + '</span></div>' +
+        '<div class="meta">' + i.meta + '</div>' +
+        '<div class="nums">' +
+        '<div class="n"><div class="l">Qtd</div><div class="v">' + i.qty + '</div></div>' +
+        '<div class="n"><div class="l">Preço</div><div class="v">' + i.preco + '</div></div>' +
+        '<div class="n"><div class="l">Margem desta ordem</div><div class="v ' + (i.pos ? 'pos' : 'neg') + '">' + i.pnl + '</div></div>' +
+        '</div>' +
+        (i.state ? '<div class="reopen"><svg class="icon"><use href="#ic-edit"></use></svg> Toque para reabrir e ajustar</div>' : '') +
+        '</div>';
+    }).join('');
+  }
+  function renderCarteiraActive() {
+    var active = document.querySelector('#port-tabs button.active');
+    renderCarteira(active ? active.dataset.tab : 'simulacoes');
+  }
+  document.querySelectorAll('#port-tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#port-tabs button').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      renderCarteira(b.dataset.tab);
+    });
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  function seedEntregas() {
+    var list = document.getElementById('entregas-list');
+    list.innerHTML = ENTREGAS_SEED.map(function (o) { return buildEntregaCardHtml(o); }).join('');
+    Array.prototype.slice.call(list.querySelectorAll('.hb-entrega-card')).forEach(updateEntregaSummary);
+    renumberEntregas();
+    refreshEntregaRouteSelects();
+  }
+
+  populateSerieBolsaOptions();
+  document.querySelectorAll('#logistica-list .hb-route-card').forEach(updateRouteSummary);
+  seedEntregas();
+  updateAtivoSummary();
+  renderMercado();
+  renderCarteira('simulacoes');
+  recalc();
+  // Guarda o estado inicial na simulação de exemplo, pra ela ser reabrível
+  PORTFOLIO.simulacoes[0].state = snapshotState('');
+</script>
+</body>
+</html>
