@@ -635,13 +635,13 @@
       </details>
 
       <!-- (7.2) Logística e Entregas são DUAS linhas distintas, com cor própria -->
-      <div class="b-row" onclick="openLogisticaModal('rotas')" role="button" tabindex="0" style="cursor:pointer;">
+      <div class="b-row" onclick="openRotasModal()" role="button" tabindex="0" style="cursor:pointer;">
         <span class="tagdot rotas"></span>
         <span class="lbl">Logística</span>
         <span class="val-strong" id="logistica-summary">1 rota · <span class="dim">R$ 100,00/ton</span></span>
         <svg class="icon chev"><use href="#ic-chevron-right"></use></svg>
       </div>
-      <div class="b-row" onclick="openLogisticaModal('entregas')" role="button" tabindex="0" style="cursor:pointer;">
+      <div class="b-row" onclick="openEntregasModal()" role="button" tabindex="0" style="cursor:pointer;">
         <span class="tagdot entregas"></span>
         <span class="lbl">Entregas</span>
         <span class="val-strong" id="entregas-summary">2 entregas · <span class="dim">até 08-mai-2026</span></span>
@@ -751,7 +751,9 @@
       <div class="tool-card"><span class="t">Backoffice<br><small style="color:var(--muted2)">read-only</small></span><svg class="icon ic"><use href="#ic-archive"></use></svg></div>
       <div class="tool-card"><span class="t">Cadastro<br>de Rotas</span><svg class="icon ic"><use href="#ic-truck"></use></svg></div>
       <div class="tool-card"><span class="t">Calendário<br>de Entregas</span><svg class="icon ic"><use href="#ic-calendar"></use></svg></div>
-      <div class="tool-card"><span class="t">Relatórios<br>MTM</span><svg class="icon ic"><use href="#ic-bar-chart"></use></svg></div>
+      <!-- Daily 28/07 — MTM nao abre planilha no celular: direciona para o
+           resumo que ja existe em Operacoes. -->
+      <div class="tool-card" onclick="goTo('carteira')"><span class="t">Relatórios<br>MTM</span><svg class="icon ic"><use href="#ic-bar-chart"></use></svg></div>
     </div>
   </div>
 
@@ -766,15 +768,17 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<!-- ============ POP-UP: LOGÍSTICA (7.2) ============ -->
-<div class="modal-overlay" id="logisticaModal" onclick="if(event.target===this) closeLogisticaModal()">
+<!-- ============ POP-UP 1: LOGÍSTICA (rotas) ============
+     Daily 28/07 — Thiago pediu pop-ups distintos: um de Logística, outro de
+     Entregas. Antes as duas linhas da boleta abriam a mesma folha. -->
+<div class="modal-overlay" id="rotasModal" onclick="if(event.target===this) closeRotasModal()">
   <div class="modal-sheet">
     <div class="modal-head">
       <div>
-        <h2>Logística e Entregas</h2>
-        <div class="sub">Ao concluir, o resumo ponderado volta para a boleta</div>
+        <h2>Logística</h2>
+        <div class="sub">Rotas e frete por tonelada</div>
       </div>
-      <button class="icon-btn" onclick="closeLogisticaModal()" title="Fechar"><svg class="icon"><use href="#ic-x"></use></svg></button>
+      <button class="icon-btn" onclick="closeRotasModal()" title="Fechar"><svg class="icon"><use href="#ic-x"></use></svg></button>
     </div>
     <div class="modal-body">
 
@@ -852,6 +856,25 @@
         </div>
       </div>
 
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-primary" onclick="closeRotasModal()">Concluído</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ POP-UP 2: ENTREGAS ============ -->
+<div class="modal-overlay" id="entregasModal" onclick="if(event.target===this) closeEntregasModal()">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div>
+        <h2>Entregas</h2>
+        <div class="sub">Ao concluir, o resumo ponderado volta para a boleta</div>
+      </div>
+      <button class="icon-btn" onclick="closeEntregasModal()" title="Fechar"><svg class="icon"><use href="#ic-x"></use></svg></button>
+    </div>
+    <div class="modal-body">
+
       <div class="modal-section entregas" id="sec-entregas">
         <div class="modal-section-head">
           <span class="t">Entregas</span>
@@ -868,7 +891,7 @@
 
     </div>
     <div class="modal-foot">
-      <button type="button" class="btn-primary" onclick="closeLogisticaModal()">Concluído</button>
+      <button type="button" class="btn-primary" onclick="closeEntregasModal()">Concluído</button>
     </div>
   </div>
 </div>
@@ -1261,22 +1284,17 @@
   });
 
   // ============================================================
-  // (7.2) Pop-up de logística — abre já rolado na seção pedida
+  // (7.2 + daily 28/07) Dois pop-ups independentes: Logística e Entregas.
+  // Cada linha da boleta abre só o seu.
   // ============================================================
-  function openLogisticaModal(section) {
-    var modal = document.getElementById('logisticaModal');
+  function openModal(id) {
+    var modal = document.getElementById(id);
     if (!modal) return;
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
-    if (section === 'entregas') {
-      setTimeout(function () {
-        var t = document.getElementById('sec-entregas');
-        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 120);
-    }
   }
-  function closeLogisticaModal() {
-    var modal = document.getElementById('logisticaModal');
+  function closeModal(id) {
+    var modal = document.getElementById(id);
     if (!modal) return;
     modal.classList.remove('open');
     document.body.style.overflow = '';
@@ -1285,6 +1303,10 @@
     var w = document.querySelector('.wavg');
     if (w) { w.style.borderColor = 'var(--blue)'; setTimeout(function () { w.style.borderColor = ''; }, 900); }
   }
+  function openRotasModal() { openModal('rotasModal'); }
+  function closeRotasModal() { closeModal('rotasModal'); }
+  function openEntregasModal() { openModal('entregasModal'); }
+  function closeEntregasModal() { closeModal('entregasModal'); }
 
   // ============================================================
   // CÁLCULO — margem da ORDEM em tela (8.4)

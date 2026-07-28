@@ -43,6 +43,16 @@ Principais mudanças em relação à v2:
 | Simulações | Status "Simulação" em Operações, reabríveis para ajuste |
 | Escopo do P&L | A margem exibida é sempre a da ordem em tela, nunca o total da carteira |
 
+### Ajustes da daily de 28/07
+
+- **Pop-ups separados.** Logística e Entregas abriam a mesma folha; agora cada
+  linha da boleta abre o seu próprio pop-up.
+- **Relatórios MTM.** O card em Ferramentas não abre planilha — direciona para o
+  resumo de MTM que já existe em Operações.
+
+Confirmados como corretos na mesma daily: a linha de resumo da boleta, a barra de
+referências retrátil e a simulação cabendo em uma tela só, sem rolagem no celular.
+
 ---
 
 ## Pendências conhecidas
