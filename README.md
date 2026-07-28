@@ -53,6 +53,29 @@ Principais mudanças em relação à v2:
 Confirmados como corretos na mesma daily: a linha de resumo da boleta, a barra de
 referências retrátil e a simulação cabendo em uma tela só, sem rolagem no celular.
 
+### Identidade visual
+
+A marca entra em quatro pontos, todos escolhidos para não disputar espaço com a
+margem — que segue sendo o único número grande da boleta:
+
+- **Splash de abertura** (1,4s, toque pula), sobre o mesmo fundo escuro do app.
+- **Monograma na topbar**, no lugar da seta de voltar. Não custa altura porque a
+  barra já existia.
+- **Tela de confirmação de envio**, com a logo completa, o número da ordem e a
+  margem. Substitui o toast — é o momento em que o usuário para e olha.
+- **Assinatura em Ferramentas**, com versão e o crédito Vertice CMD.
+- **Favicon e ícone de tela de início**, para quando o link é salvo na home do
+  celular.
+
+As logos são geradas a partir do arquivo original da marca: o texto azul-marinho
+é convertido em branco e os raios são clareados de `#1E7C46` para `#35B060` para
+ler no tema escuro, preservando o anti-serrilhado. No tema claro a arte original
+é usada. Tudo embutido em base64 — o protótipo continua sendo um arquivo único,
+sem dependência externa.
+
+> Os raios clareados são uma decisão de contraste, não a cor oficial. Se houver
+> uma versão negativa aprovada no manual de identidade, ela deve substituir esta.
+
 ---
 
 ## Pendências conhecidas
