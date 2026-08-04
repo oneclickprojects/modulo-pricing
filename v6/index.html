@@ -809,10 +809,24 @@
           <label>Payment Terms (days)</label>
           <input id="in-payterms" value="30" inputmode="numeric">
         </div>
+        <div class="form-field">
+          <label>Commission</label>
+          <input id="in-commission" value="0" inputmode="decimal">
+        </div>
+        <div class="form-field">
+          <label>Commission Type</label>
+          <div class="seg" id="commSeg">
+            <button type="button" data-ctype="PCT" class="active">%</button>
+            <button type="button" data-ctype="CTS_LB">c/lb</button>
+            <button type="button" data-ctype="BRL_TON">R$/t</button>
+            <button type="button" data-ctype="USD_TON">US$/t</button>
+          </div>
+        </div>
       </div>
       <div class="form-note">
         Payment terms drive the financing charge and the FX leg of the margin.
-        The charge itself shows up in the cost breakdown, not as a field.
+        Commission is a cost line like freight — it comes off the margin same as the rest.
+        Both charges show up in the cost breakdown, not as separate fields.
       </div>
     </div>
     <div class="modal-foot">
@@ -1356,6 +1370,18 @@
   });
   document.getElementById('in-payterms').addEventListener('input', recalc);
 
+  // (13) Commission — % of flat price, or a fixed value per c/lb, R$/t or US$/t
+  var currentCommType = 'PCT';
+  document.querySelectorAll('#commSeg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#commSeg button').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      currentCommType = b.dataset.ctype;
+      recalc();
+    });
+  });
+  document.getElementById('in-commission').addEventListener('input', recalc);
+
   // (3) Product
   function updateProductBlock() {
     setTxt('product-grade', document.getElementById('in-grade').value);
@@ -1423,7 +1449,14 @@
     var chargesUsd = chargesBrl / avgFx;
     // (11) Cost of funds virou charge, calculada pelo payment terms.
     var financingUsd = flatUsd * (DESK_COF_PA / 100) * (days / 360);
-    var landedUsd = flatUsd + freightUsd + chargesUsd + financingUsd;
+    // (13) Commission — % do flat price, ou valor fixo em c/lb, R$/t ou US$/t.
+    var commVal = getNum('in-commission');
+    var commissionUsd;
+    if (currentCommType === 'PCT') commissionUsd = flatUsd * (commVal / 100);
+    else if (currentCommType === 'CTS_LB') commissionUsd = (commVal / 100) * FACTOR_LB_TON;
+    else if (currentCommType === 'BRL_TON') commissionUsd = commVal / avgFx;
+    else commissionUsd = commVal; // USD_TON
+    var landedUsd = flatUsd + freightUsd + chargesUsd + financingUsd + commissionUsd;
 
     // ---- valor de mercado ----
     var marketUsd = ((avgCot + avgBasis) / 100) * FACTOR_LB_TON;
@@ -1471,7 +1504,7 @@
 
     LAST = {
       Q: Q, flatUsd: flatUsd, freightUsd: freightUsd, chargeLines: chargeLines, chargesUsd: chargesUsd,
-      financingUsd: financingUsd, landedUsd: landedUsd, marketUsd: marketUsd, marginPerTon: marginPerTon,
+      financingUsd: financingUsd, commissionUsd: commissionUsd, landedUsd: landedUsd, marketUsd: marketUsd, marginPerTon: marginPerTon,
       marginUsd: marginUsd, notionalUsd: notionalUsd, avgCot: avgCot, avgBasis: avgBasis, days: days,
       avgFx: avgFx, boards: legs.map(function (l) { return l.board; }).filter(function (v, i, a) { return a.indexOf(v) === i; })
     };
@@ -1487,6 +1520,7 @@
     };
     var perTon = [
       row('Flat price', fmt(d.flatUsd, 2)),
+      row('Commission', fmt(d.commissionUsd, 2), 'sub'),
       row('Freight', fmt(d.freightUsd, 2))
     ];
     d.chargeLines.forEach(function (l) { perTon.push(row(l.label, fmt(l.usd, 2), 'sub')); });
@@ -1501,6 +1535,7 @@
       row('Avg commodity', fmt(d.avgCot, 2) + ' c/lb', '', d.boards.join(' · ')),
       row('Avg FX', fmt(d.avgFx, 4)),
       row('Notional', 'US$ ' + fmtCompact(d.notionalUsd)),
+      row('Commission', 'US$ ' + fmtCompact(d.commissionUsd * d.Q)),
       row('Freight', 'US$ ' + fmtCompact(d.freightUsd * d.Q)),
       row('Charges', 'US$ ' + fmtCompact(d.chargesUsd * d.Q)),
       row('Financing', 'US$ ' + fmtCompact(d.financingUsd * d.Q)),
@@ -1637,6 +1672,8 @@
       price: document.getElementById('in-price').value,
       unit: currentUnit,
       payterms: document.getElementById('in-payterms').value,
+      commission: document.getElementById('in-commission').value,
+      commType: currentCommType,
       grade: document.getElementById('in-grade').value,
       crop: document.getElementById('in-crop').value,
       market: document.getElementById('in-market').value,
@@ -1700,6 +1737,7 @@
     document.getElementById('in-qty').value = s.qty;
     document.getElementById('in-price').value = s.price;
     document.getElementById('in-payterms').value = s.payterms;
+    document.getElementById('in-commission').value = s.commission || '0';
     document.getElementById('in-grade').value = s.grade;
     document.getElementById('in-crop').value = s.crop;
     document.getElementById('in-market').value = s.market;
@@ -1709,6 +1747,8 @@
     routeSeq = s.routeSeq || 1;
     currentUnit = s.unit;
     document.querySelectorAll('#unitSeg button').forEach(function (b) { b.classList.toggle('active', b.dataset.unit === currentUnit); });
+    currentCommType = s.commType || 'PCT';
+    document.querySelectorAll('#commSeg button').forEach(function (b) { b.classList.toggle('active', b.dataset.ctype === currentCommType); });
     updateProductBlock(); refreshRouteSelects(); setEditing(item.id, item.id); recalc();
     goTo('purchase');
     showToast('Order ' + item.id + ' reopened');
@@ -1727,6 +1767,7 @@
     document.getElementById('in-qty').value = '200';
     document.getElementById('in-price').value = '4.35';
     document.getElementById('in-payterms').value = '30';
+    document.getElementById('in-commission').value = '0';
     document.getElementById('in-grade').selectedIndex = 1;
     document.getElementById('in-crop').selectedIndex = 1;
     document.getElementById('in-market').selectedIndex = 1;
@@ -1734,6 +1775,8 @@
     document.getElementById('in-notes').value = '';
     currentUnit = 'BRL_LB';
     document.querySelectorAll('#unitSeg button').forEach(function (b) { b.classList.toggle('active', b.dataset.unit === 'BRL_LB'); });
+    currentCommType = 'PCT';
+    document.querySelectorAll('#commSeg button').forEach(function (b) { b.classList.toggle('active', b.dataset.ctype === 'PCT'); });
     seedRoutes(); seedMonths(); updateProductBlock(); resetSwipe(); setEditing(null); recalc();
   }
 
