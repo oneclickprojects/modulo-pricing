@@ -324,7 +324,7 @@
     background:var(--card); border:1px solid var(--line); border-radius:11px;
     padding:8px 9px; margin-bottom:7px;
   }
-  .mrow-top{ display:flex; align-items:center; gap:7px; }
+  .mrow-top{ display:flex; align-items:center; gap:7px; margin-top:8px; }
   .mrow-bot{ display:flex; align-items:center; gap:7px; margin-top:7px; }
   .mrow select, .mrow input{
     background:var(--bg2); color:var(--text); border:1px solid var(--line); border-radius:8px;
@@ -335,6 +335,32 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='5'><path d='M0 0l4.5 5 4.5-5z' fill='%238A94A3'/></svg>");
     background-repeat:no-repeat; background-position:right 7px center;
   }
+  /* (v7) A Entrega Final e a cabeca da entrega: e dela que saem o Mes Ref.,
+     a Tela Bolsa, a Cotacao e — via Data Pgto — a Tela Fx e o cambio.
+     Por isso ela sai da grade e ganha uma faixa propria no topo do cartao. */
+  .m-lead{
+    display:flex; align-items:center; gap:9px; padding:8px 10px;
+    background:var(--blue-soft); border:1px solid rgba(77,141,247,.32); border-radius:9px;
+  }
+  .m-lead .k{
+    font-size:8px; font-weight:800; color:var(--blue); text-transform:uppercase;
+    letter-spacing:.5px; flex:0 0 auto; line-height:1.3;
+  }
+  .m-lead input{
+    flex:1; min-width:0; background:transparent; border:none; padding:0;
+    font-family:inherit; font-size:15px; font-weight:800; color:var(--text);
+    color-scheme:dark; letter-spacing:-.2px;
+  }
+  body.light .m-lead input{ color-scheme:light; }
+  .m-lead input:focus{ outline:none; }
+  .m-lead .feeds{
+    flex:0 0 auto; font-size:7.5px; font-weight:800; color:var(--blue); opacity:.75;
+    text-transform:uppercase; letter-spacing:.3px; text-align:right; line-height:1.35;
+  }
+  .mrow.todo .m-lead{ background:var(--red-soft); border-color:rgba(244,82,94,.45); }
+  .mrow.todo .m-lead .k, .mrow.todo .m-lead .feeds{ color:var(--red); }
+  .m-lead.todo{ background:var(--red-soft); border-color:rgba(244,82,94,.45); }
+
   /* (v7) Grade de campos da entrega — mesma ordem de colunas do OneClick */
   .m-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:8px; }
   .m-cell{ display:flex; flex-direction:column; gap:3px; min-width:0; }
@@ -838,27 +864,8 @@
       <button type="button" onclick="clearForm(true)">New</button>
     </div>
 
-    <!-- (5) Quantity | Price / Product | Summary -->
+    <!-- (5) Price | Quantity / Product | Financial Panel -->
     <div class="blocks">
-
-      <!-- ---------- QUANTITY ---------- -->
-      <div class="blk b-qty">
-        <span class="blk-l">Quantity <span class="req">*</span></span>
-        <div class="blk-in">
-          <input id="in-qty" value="200" inputmode="decimal">
-          <div class="tb-step">
-            <button type="button" onclick="stepQty(-10)"><svg class="icon"><use href="#ic-minus"></use></svg></button>
-            <button type="button" onclick="stepQty(10)"><svg class="icon"><use href="#ic-plus"></use></svg></button>
-          </div>
-        </div>
-        <div class="blk-sub" id="qty-hint">t · US$ 0 (R$ 0)</div>
-        <!-- (4) A linha Delivery & Logistics saiu da tela: mora aqui dentro. -->
-        <button type="button" class="blk-link" onclick="openSchedule()">
-          <svg class="icon"><use href="#ic-calendar"></use></svg>
-          <span class="txt" id="split-hint">2 months · 1 route</span>
-          <svg class="icon chev"><use href="#ic-chevron-right"></use></svg>
-        </button>
-      </div>
 
       <!-- ---------- PRICE ---------- -->
       <div class="blk b-price">
@@ -875,6 +882,25 @@
         <button type="button" class="blk-link" onclick="openPrice()">
           <svg class="icon"><use href="#ic-dollar"></use></svg>
           <span class="txt" id="price-hint">BRL/lb · 30 days</span>
+          <svg class="icon chev"><use href="#ic-chevron-right"></use></svg>
+        </button>
+      </div>
+
+      <!-- ---------- QUANTITY ---------- -->
+      <div class="blk b-qty">
+        <span class="blk-l">Quantity <span class="req">*</span></span>
+        <div class="blk-in">
+          <input id="in-qty" value="200" inputmode="decimal">
+          <div class="tb-step">
+            <button type="button" onclick="stepQty(-10)"><svg class="icon"><use href="#ic-minus"></use></svg></button>
+            <button type="button" onclick="stepQty(10)"><svg class="icon"><use href="#ic-plus"></use></svg></button>
+          </div>
+        </div>
+        <div class="blk-sub" id="qty-hint">t · US$ 0 (R$ 0)</div>
+        <!-- (4) A linha Delivery & Logistics saiu da tela: mora aqui dentro. -->
+        <button type="button" class="blk-link" onclick="openSchedule()">
+          <svg class="icon"><use href="#ic-calendar"></use></svg>
+          <span class="txt" id="split-hint">2 months · 1 route</span>
           <svg class="icon chev"><use href="#ic-chevron-right"></use></svg>
         </button>
       </div>
@@ -1099,7 +1125,7 @@
     <div class="modal-head">
       <div>
         <h2>Delivery &amp; Logistics</h2>
-        <div class="sub">Split the quantity, pick the screen per delivery</div>
+        <div class="sub">Each delivery starts from its final date</div>
       </div>
       <button class="icon-btn" onclick="closeSchedule()" title="Close"><svg class="icon"><use href="#ic-x"></use></svg></button>
     </div>
@@ -1642,13 +1668,17 @@
     };
     return [
       '<div class="mrow">',
+      '  <div class="m-lead">',
+      '    <span class="k">Final<br>delivery</span>',
+      '    <input type="date" class="m-final" value="' + finalIso + '">',
+      '    <span class="feeds">ref month · screen<br>quote · fx</span>',
+      '  </div>',
       '  <div class="mrow-top">',
       '    <div class="m-qty-wrap"><input class="m-qty" value="' + (blank ? '' : fmt(o.qty || 0, 2)) + '" inputmode="decimal" placeholder="0.00"><span class="m-unit">t</span></div>',
       '    <button type="button" class="m-fix" onclick="toggleFix(this)">+ Fix</button>',
       '    <button class="m-x" onclick="removeMonth(this)" title="Remove delivery"><svg class="icon"><use href="#ic-x"></use></svg></button>',
       '  </div>',
       '  <div class="m-grid">',
-      cell('Final delivery', '<input type="date" class="m-final" value="' + finalIso + '">'),
       cell('Ref. month', '<select class="m-ref">' + MONTH_LIST.map(function (m) {
         return '<option' + (m === ref ? ' selected' : '') + '>' + m + '</option>';
       }).join('') + '</select>'),
@@ -2027,13 +2057,14 @@
 
     // ---------- pendencias: o que ainda falta para precificar ----------
     var mark = function (el, bad) { if (el) el.classList.toggle('todo', !!bad); };
-    var blks = document.querySelectorAll('#view-purchase .blk');
-    mark(blks[0], !(Q > 0));
-    mark(blks[1], !(P > 0));
+    // Por classe, nao por posicao: a ordem dos blocos pode mudar.
+    var blk = function (c) { return document.querySelector('#view-purchase .blk.' + c); };
     var gradeEmpty = document.getElementById('in-grade').selectedIndex === 0;
     var marketEmpty = document.getElementById('in-market').selectedIndex === 0;
-    mark(blks[2], gradeEmpty || marketEmpty);
-    mark(blks[3], !ready);
+    mark(blk('b-price'), !(P > 0));
+    mark(blk('b-qty'), !(Q > 0));
+    mark(blk('b-prod'), gradeEmpty || marketEmpty);
+    mark(blk('b-sum'), !ready);
     legs.forEach(function (l) {
       l.row.classList.toggle('todo', !l.ok);
       mark(l.row.querySelector('.m-final'), !l.row.querySelector('.m-final').value);
