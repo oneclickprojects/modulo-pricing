@@ -1,0 +1,2 @@
+- Removido o rastreador de acessos (GoatCounter) do protótipo
+- O protótipo volta a não fazer nenhuma chamada de rede, como o README descreve
