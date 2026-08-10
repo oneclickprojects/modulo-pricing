@@ -1,0 +1,2 @@
+- Histórico de versões passa a aparecer dentro do próprio protótipo, no selo do canto
+- Cada alteração publicada vira uma versão numerada, com autor e data
