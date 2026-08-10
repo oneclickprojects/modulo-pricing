@@ -13,6 +13,7 @@
 #   Settings > Pages > Source: GitHub Actions
 #   Settings > Environments > github-pages > Deployment branches: All branches
 #   Settings > Actions > General > Workflow permissions: Read and write
+#     (só isso — não é preciso liberar criação de PR pelas Actions)
 
 name: Publicar prototipo
 
@@ -30,7 +31,6 @@ permissions:
   contents: write
   pages: write
   id-token: write
-  pull-requests: write
 
 concurrency:
   group: prototipo
@@ -108,7 +108,6 @@ jobs:
       - name: Merge
         id: merge
         env:
-          GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ github.ref_name }}
         run: |
           git config user.name "github-actions[bot]"
@@ -118,18 +117,21 @@ jobs:
           # 1. Trazer a main para dentro da branch (evita divergência).
           if ! git merge --no-edit origin/main -m "Sincroniza main em $BRANCH"; then
             git merge --abort || true
-            echo "::error::Conflito entre $BRANCH e a main. Abrindo PR."
-            gh pr create --base main --head "$BRANCH" \
-              --title "Conflito: $BRANCH x main" \
-              --body "O merge automático parou por conflito. Resolva por aqui — o \
-          arquivo é único e o merge precisa de olho humano." 2>/dev/null \
-              || echo "PR já existe."
-            cat >> $GITHUB_STEP_SUMMARY <<'FIM'
-          ## Conflito com a main
-
-          A branch e a main mexeram no mesmo trecho do `index.html`. Um Pull
-          Request foi aberto — resolva por lá. Nada foi publicado.
-          FIM
+            echo "::error::Conflito entre $BRANCH e a main. Nada foi publicado."
+            # Link de comparação em vez de abrir o PR pela API: não depende da
+            # permissão "Allow GitHub Actions to create and approve pull requests".
+            {
+              echo "## Conflito com a main"
+              echo ""
+              echo "A branch \`$BRANCH\` e a main mexeram no mesmo trecho do"
+              echo "\`$PASTA/index.html\`. **Nada foi publicado** e a main não mudou."
+              echo ""
+              echo "Abra o Pull Request para resolver com o diff na tela:"
+              echo ""
+              echo "https://github.com/$GITHUB_REPOSITORY/compare/main...$BRANCH?expand=1"
+              echo ""
+              echo "Seu trabalho continua intacto na branch \`$BRANCH\`."
+            } >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
