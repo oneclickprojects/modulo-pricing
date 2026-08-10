@@ -204,7 +204,12 @@ jobs:
   sincronizar:
     name: Devolver main para as branches
     needs: publicar
-    if: needs.publicar.result == 'success' && github.event_name == 'push'
+    # always() é obrigatório aqui: em push na main o job "integrar" é pulado, e
+    # sem always() o GitHub pula toda a cadeia depois dele, inclusive este job.
+    if: |
+      always() && !cancelled() &&
+      needs.publicar.result == 'success' &&
+      github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
