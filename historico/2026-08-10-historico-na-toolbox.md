@@ -1,0 +1,2 @@
+- Histórico de versões agora abre por um cartão "Version History" na Toolbox
+- Numeração passa a continuar a contagem do protótipo, começando na v9
