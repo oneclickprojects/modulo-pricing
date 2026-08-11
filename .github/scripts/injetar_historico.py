@@ -22,6 +22,10 @@ ALVO = Path(os.environ.get("ALVO_HTML", "index.html"))
 ABRE = "<!-- historico-de-versoes -->"
 FECHA = "<!-- /historico-de-versoes -->"
 
+# O protótipo já vinha versionado à mão até a v8, então a contagem continua
+# de onde ela parou: a primeira entrada registrada é a v9.
+BASE = int(os.environ.get("VERSAO_BASE", "8"))
+
 MESES = ["jan", "fev", "mar", "abr", "mai", "jun",
          "jul", "ago", "set", "out", "nov", "dez"]
 
@@ -61,7 +65,7 @@ def entradas():
     # com a data) desempata de forma estável.
     achadas.sort(key=lambda e: (e["iso"] or "9999", e["arquivo"]))
     for i, e in enumerate(achadas, start=1):
-        e["versao"] = i
+        e["versao"] = BASE + i
         e["data"] = ""
         if len(e["iso"]) >= 10:
             e["data"] = f"{e['iso'][8:10]} {MESES[int(e['iso'][5:7]) - 1]}"
@@ -69,13 +73,19 @@ def entradas():
     return achadas
 
 
-TEMPLATE = """
-<!-- historico-de-versoes -->
+# Sem quebra de linha antes do marcador: a remoção consome exatamente
+# ABRE..FECHA mais um \n, então injetar e remover é reversível byte a byte.
+# Com uma quebra sobrando aqui, cada publicação deixaria uma linha em branco nova.
+TEMPLATE = """<!-- historico-de-versoes -->
 <style>
-#hv-selo{position:fixed;right:6px;bottom:6px;z-index:2147483646;font:10px/1
-system-ui,-apple-system,sans-serif;padding:4px 7px;border-radius:999px;border:0;
-background:rgba(0,0,0,.5);color:#fff;-webkit-backdrop-filter:blur(3px);
-backdrop-filter:blur(3px);cursor:pointer}
+#hv-selo{position:fixed;right:10px;bottom:10px;z-index:2147483646;
+font:11px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:500;
+padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.22);
+background:rgba(18,22,28,.86);color:#e6edf3;-webkit-backdrop-filter:blur(6px);
+backdrop-filter:blur(6px);cursor:pointer;display:flex;align-items:center;gap:6px;
+box-shadow:0 2px 10px rgba(0,0,0,.35)}
+#hv-selo .hv-pt{width:5px;height:5px;border-radius:50%;background:#35b060;
+flex:0 0 auto}
 #hv-painel{position:fixed;inset:0;z-index:2147483647;display:none;
 background:rgba(8,10,14,.94);-webkit-backdrop-filter:blur(6px);
 backdrop-filter:blur(6px);overflow-y:auto;-webkit-overflow-scrolling:touch;
@@ -103,7 +113,6 @@ border:1px solid #2f6f4f;border-radius:999px;padding:1px 7px}
 #hv-painel .hv-vazio{color:#8b949e;font-style:italic}
 #hv-painel .hv-rodape{padding:0 16px 40px;color:#6e7681;font-size:11.5px}
 </style>
-<button id="hv-selo" type="button" aria-haspopup="dialog">v__VERSAO__</button>
 <div id="hv-painel" role="dialog" aria-modal="true" aria-label="Histórico de versões">
   <div class="hv-topo">
     <h2>Histórico de versões</h2>
@@ -138,7 +147,54 @@ border:1px solid #2f6f4f;border-radius:999px;padding:1px 7px}
   });
   function abrir(){ painel.classList.add('hv-on'); }
   function fechar(){ painel.classList.remove('hv-on'); }
-  document.getElementById('hv-selo').addEventListener('click', abrir);
+
+  // Ponto de entrada: um cartão dentro da Toolbox do protótipo, no mesmo
+  // padrão dos outros (.tool-card + ícone do próprio arquivo). Nada de selo
+  // flutuante sobre a interface.
+  function montarCartao(){
+    var grade = document.querySelector('.tools-grid');
+    if (!grade || document.getElementById('hv-card')) return !!grade;
+    var card = document.createElement('div');
+    card.className = 'tool-card';
+    card.id = 'hv-card';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.innerHTML =
+      '<span class="t">Version<br>History' +
+      '<br><small style="color:var(--muted2)">v__VERSAO__</small></span>' +
+      '<svg class="icon ic"><use href="#ic-calendar"></use></svg>';
+    function acionar(){
+      // fecha a Toolbox antes de abrir o painel, se a função existir
+      try { if (typeof closeTools === 'function') closeTools(); } catch (e) {}
+      abrir();
+    }
+    card.addEventListener('click', acionar);
+    card.addEventListener('keydown', function(ev){
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); acionar(); }
+    });
+    grade.appendChild(card);
+    return true;
+  }
+
+  // Rede de segurança: se a Toolbox não existir (outra pasta, outra versão do
+  // protótipo), cai para um selo flutuante em vez de ficar sem acesso nenhum.
+  function montarSeloReserva(){
+    if (document.getElementById('hv-selo')) return;
+    var selo = document.createElement('button');
+    selo.id = 'hv-selo';
+    selo.type = 'button';
+    selo.setAttribute('aria-haspopup', 'dialog');
+    selo.setAttribute('aria-label', 'Ver histórico de versões');
+    selo.innerHTML = '<span class="hv-pt"></span><span>v__VERSAO__ &middot; histórico</span>';
+    selo.addEventListener('click', abrir);
+    document.body.appendChild(selo);
+  }
+
+  if (!montarCartao()) {
+    // a Toolbox pode ser montada depois; tenta de novo antes de desistir
+    setTimeout(function(){ if (!montarCartao()) montarSeloReserva(); }, 1800);
+  }
+
   document.getElementById('hv-fechar').addEventListener('click', fechar);
   painel.addEventListener('click', function(ev){ if (ev.target === painel) fechar(); });
   document.addEventListener('keydown', function(ev){
@@ -155,7 +211,7 @@ def main():
         return 1
 
     dados = entradas() if PASTA.is_dir() else []
-    versao = dados[0]["versao"] if dados else 0
+    versao = dados[0]["versao"] if dados else BASE
 
     bloco = (TEMPLATE
              .replace("__DADOS__", json.dumps(dados, ensure_ascii=False))
@@ -166,8 +222,10 @@ def main():
     # Idempotente: remove só o bloco entre os marcadores, preservando o que vem
     # depois (</body></html>). Sem os dois marcadores isso comeria o fim do
     # arquivo a cada publicação.
+    # O \n? final casa a quebra que o próprio bloco traz, para não sobrar linha
+    # em branco acumulando a cada publicação.
     if ABRE in src:
-        src = re.sub(re.escape(ABRE) + r".*?" + re.escape(FECHA),
+        src = re.sub(re.escape(ABRE) + r".*?" + re.escape(FECHA) + r"\n?",
                      "", src, flags=re.S)
 
     pos = src.lower().rfind("</body>")
