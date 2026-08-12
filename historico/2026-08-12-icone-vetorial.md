@@ -1,0 +1,2 @@
+- Ícone do app (splash e atalho instalado) refeito a partir de uma fonte vetorial oficial da marca, em vez de uma imagem pequena ampliada — bordas bem mais nítidas
+- Cor de fundo do ícone/splash ajustada para o navy exato do material oficial (#010725)
