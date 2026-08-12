@@ -1,0 +1,1 @@
+- Painel de "Histórico de versões" agora mostra também o horário de cada publicação, além da data

@@ -67,8 +67,11 @@ def entradas():
     for i, e in enumerate(achadas, start=1):
         e["versao"] = BASE + i
         e["data"] = ""
+        e["hora"] = ""
         if len(e["iso"]) >= 10:
             e["data"] = f"{e['iso'][8:10]} {MESES[int(e['iso'][5:7]) - 1]}"
+        if len(e["iso"]) >= 16:
+            e["hora"] = e["iso"][11:16]
     achadas.reverse()  # mais recente primeiro
     return achadas
 
@@ -141,7 +144,7 @@ border:1px solid #2f6f4f;border-radius:999px;padding:1px 7px}
       '<div class="hv-cab">' +
         '<span class="hv-v">v' + e.versao + '</span>' +
         '<span class="hv-quem">' + esc(e.autor) + '</span>' +
-        '<span class="hv-quando">' + esc(e.data) + ' &middot; ' + esc(e.sha) + '</span>' +
+        '<span class="hv-quando">' + esc(e.data) + (e.hora ? ' &middot; ' + esc(e.hora) : '') + ' &middot; ' + esc(e.sha) + '</span>' +
       '</div>' + itens;
     lista.appendChild(li);
   });
