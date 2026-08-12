@@ -969,6 +969,7 @@
     content:'In progress'; display:block; margin-top:4px; font-size:8px; font-weight:800;
     color:var(--amber); text-transform:uppercase; letter-spacing:.4px;
   }
+  .tool-card.wip.washout .t::after{ color:var(--red); }
 
   /* ============ BOTTOM NAV ============ */
   .bottomnav{
@@ -1637,7 +1638,7 @@
         <div class="tool-card" onclick="showToast('Back office view — next phase')"><span class="t">Back Office<br><small style="color:var(--muted2)">read-only</small></span><svg class="icon ic"><use href="#ic-archive"></use></svg></div>
         <div class="tool-card" onclick="showToast('Route registry — next phase')"><span class="t">Route<br>Registry</span><svg class="icon ic"><use href="#ic-truck"></use></svg></div>
         <div class="tool-card wip" onclick="wip('Sales simulation')"><span class="t">Sales<br>Simulation</span><svg class="icon ic"><use href="#ic-trending-down"></use></svg></div>
-        <div class="tool-card wip" onclick="wip('Washout')"><span class="t">Washout</span><svg class="icon ic"><use href="#ic-arrows"></use></svg></div>
+        <div class="tool-card wip washout" onclick="wip('Washout')"><span class="t">Washout</span><svg class="icon ic"><use href="#ic-arrows"></use></svg></div>
         <div class="tool-card" onclick="closeTools(); openFixHub()"><span class="t">Fixations</span><svg class="icon ic"><use href="#ic-tag"></use></svg></div>
         <div class="tool-card wip" onclick="wip('Derivatives')"><span class="t">Derivatives</span><svg class="icon ic"><use href="#ic-layers"></use></svg></div>
         <div class="tool-card" onclick="closeTools(); askClearAll()"><span class="t">Clear all<br><small style="color:var(--muted2)">fill from scratch</small></span><svg class="icon ic"><use href="#ic-eraser"></use></svg></div>

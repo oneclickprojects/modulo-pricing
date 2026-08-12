@@ -1,0 +1,1 @@
+- O status "In progress" do Washout na Toolbox agora aparece em vermelho, facilitando sua identificação
