@@ -1,0 +1,2 @@
+- Removida a tela de logo (splash) que aparecia rapidamente ao abrir o app — agora abre direto na tela principal
+- O botão/gesto de voltar do Android agora fecha a tela ou pop-up aberto (Toolbox, Price, Product, etc.) em vez de sair do app direto
