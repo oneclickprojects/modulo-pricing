@@ -1,0 +1,1 @@
+- Removido o botão "P&L" e a gaveta expandida (Mkt basis + spread, Implied basis, Est. revenue, Est. cost) da barra de margem

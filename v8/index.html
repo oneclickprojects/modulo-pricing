@@ -282,22 +282,7 @@
   }
   .hero-i:hover{ border-color:var(--blue); color:var(--blue); }
 
-  /* (v7) Aba recuada de PnL — vive dentro do mesmo bloco da margem, porque
-     a Margem US$/R$/% do PnL e literalmente o mesmo numero do topo. */
-  .pnl-tab{
-    display:flex; align-items:center; justify-content:center; gap:5px; width:100%;
-    background:none; border:none; border-top:1px solid var(--line); font:inherit;
-    padding:6px 0 7px; color:var(--muted2); font-size:8.5px; font-weight:800;
-    text-transform:uppercase; letter-spacing:.6px; cursor:pointer;
-  }
-  .pnl-tab:hover{ color:var(--blue); }
-  .pnl-tab .icon{ width:10px; height:10px; transition:transform .22s ease; }
-  .summary-bar.pnl-open .pnl-tab{ color:var(--blue); }
-  .summary-bar.pnl-open .pnl-tab .icon{ transform:rotate(180deg); }
-  .pnl-drawer{ max-height:0; overflow:hidden; transition:max-height .26s ease; }
-  .summary-bar.pnl-open .pnl-drawer{ max-height:260px; }
   /* Recuo: fundo mais fundo que a faixa, para ler como gaveta e nao como card */
-  .pnl-inset{ margin:0 12px 11px; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:9px 10px; }
   .pnl-grid{ display:grid; gap:6px; }
   .pnl-grid.g4{ grid-template-columns:repeat(4,minmax(0,1fr)); }
   .pnl-grid.g3{ grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:6px; }
@@ -313,7 +298,6 @@
   .pnl-c.m.pos{ background:var(--green-soft); border-color:rgba(60,192,68,.35); }
   .pnl-c.m.neg{ background:var(--red-soft); border-color:rgba(244,82,94,.35); }
   .pnl-c.m.pos .v{ color:var(--green); } .pnl-c.m.neg .v{ color:var(--red); }
-  .pnl-inset .pnl-grid.g4{ margin:0; }
   .fx-list{ margin:14px 16px 0; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
   .fx-row{ display:flex; gap:10px; padding:8px 13px; border-bottom:1px solid var(--line); align-items:baseline; }
   .fx-row:last-child{ border-bottom:none; }
@@ -1118,24 +1102,6 @@
             <span class="hero-pct" id="hero-pct">0.0%</span>
           </div>
           <span class="hero-sub" id="hero-brl">R$ 0</span>
-        </div>
-      </div>
-
-      <!-- (v7) A gaveta do PnL guarda so os insumos da margem. As tres linhas
-           de margem do painel do OneClick nao entram aqui: elas ja sao o
-           numerao, a pilula de % e o R$ logo acima. -->
-      <button type="button" class="pnl-tab" onclick="togglePnl()">
-        <span>P&amp;L</span>
-        <svg class="icon"><use href="#ic-chevron-down"></use></svg>
-      </button>
-      <div class="pnl-drawer">
-        <div class="pnl-inset">
-          <div class="pnl-grid g4">
-            <div class="pnl-c"><span class="l">Mkt basis + spread</span><span class="v amber" id="pnl-mkt">—</span></div>
-            <div class="pnl-c"><span class="l">Implied basis</span><span class="v blue" id="pnl-imp">—</span></div>
-            <div class="pnl-c"><span class="l">Est. revenue R$</span><span class="v" id="pnl-rev">—</span></div>
-            <div class="pnl-c"><span class="l">Est. cost R$</span><span class="v" id="pnl-cost">—</span></div>
-          </div>
         </div>
       </div>
     </div>
@@ -2519,12 +2485,6 @@
   }
   function openTools() { openSheet('toolsModal'); }
   function openFormula() { openSheet('formulaModal'); }
-  // (v7) Gaveta do PnL. Fica no mesmo bloco da margem de proposito: as tres
-  // celulas de margem sao o mesmo numero do topo, so que abertas.
-  function togglePnl() {
-    var bar = document.getElementById('summaryBar');
-    if (bar) bar.classList.toggle('pnl-open');
-  }
   // (v8-J33) Venda, Washout, Fixacoes e Derivativos: o esqueleto e o caminho
   // na toolbox e na barra de baixo. A tela em si e a proxima etapa.
   function wip(name) {
@@ -3159,12 +3119,6 @@
 
     setTxt('sum-implied', ready ? signed(impliedBasis, function (v) { return fmt(v, 2); }) : '—');
     setTxt('sum-market', ready ? signed(avgMktBasis, function (v) { return fmt(v, 2); }) : '—');
-
-    // ---- gaveta do PnL: mesmas colunas do painel do OneClick ----
-    setTxt('pnl-mkt', ready ? fmt(avgMktBasis, 2) : '—');
-    setTxt('pnl-imp', ready ? fmt(impliedBasis, 2) : '—');
-    setTxt('pnl-rev', ready ? fmt(revenueBrl, 0) : '—');
-    setTxt('pnl-cost', ready ? fmt(costBrl, 0) : '—');
 
     var qtyBlank = !String(document.getElementById('in-qty').value).trim();
     setTxt('qty-hint', qtyBlank ? DASH : (ready ? ('t · US$ ' + fmtCompact(notionalUsd) + ' (R$ ' + fmtCompact(notionalBrl) + ')') : 't · fill price and delivery'));
