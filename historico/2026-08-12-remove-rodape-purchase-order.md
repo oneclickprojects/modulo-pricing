@@ -1,0 +1,1 @@
+- Removido o texto "Validity: Day · Origination (Buy) / OneClick Front Office prototype · v8" do rodapé da tela de Purchase Order
