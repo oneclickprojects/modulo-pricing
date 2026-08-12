@@ -1,0 +1,1 @@
+- Ícone do app reduzido para 1/3 do tamanho (quadrado + marca), com transparência ao redor — visível na tela inicial e gaveta de apps; a splash de abertura não muda (o fundo dela já usa a mesma cor navy)
