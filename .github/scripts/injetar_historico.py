@@ -91,7 +91,7 @@ background:rgba(8,10,14,.94);-webkit-backdrop-filter:blur(6px);
 backdrop-filter:blur(6px);overflow-y:auto;-webkit-overflow-scrolling:touch;
 font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:#e6edf3;
 text-align:left}
-#hv-painel.hv-on{display:block}
+#hv-painel.open{display:block}
 #hv-painel .hv-topo{position:sticky;top:0;display:flex;align-items:center;
 justify-content:space-between;gap:12px;padding:14px 16px;
 background:rgba(8,10,14,.96);border-bottom:1px solid #232a33}
@@ -145,8 +145,19 @@ border:1px solid #2f6f4f;border-radius:999px;padding:1px 7px}
       '</div>' + itens;
     lista.appendChild(li);
   });
-  function abrir(){ painel.classList.add('hv-on'); }
-  function fechar(){ painel.classList.remove('hv-on'); }
+  // Abre/fecha reaproveitando o mesmo mecanismo dos outros modais do
+  // prototipo (openSheet/closeSheet, definidos no script principal) — assim
+  // o botao/gesto voltar do Android fecha este painel igual aos demais, sem
+  // duplicar logica de historico do navegador aqui. Fallback simples caso
+  // essas funcoes nao existam (outra versao do prototipo, por exemplo).
+  function abrir(){
+    if (typeof window.openSheet === 'function') window.openSheet('hv-painel');
+    else painel.classList.add('open');
+  }
+  function fechar(){
+    if (typeof window.closeSheet === 'function') window.closeSheet('hv-painel');
+    else painel.classList.remove('open');
+  }
 
   // Ponto de entrada: selo flutuante sempre visível na tela (não depende de
   // abrir a Toolbox). Mostra a versão atual; toca para ver o histórico.

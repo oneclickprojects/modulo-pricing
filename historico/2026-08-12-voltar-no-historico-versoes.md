@@ -1,0 +1,1 @@
+- Botão/gesto voltar do Android agora também fecha o painel de "Histórico de versões" (antes só funcionava nos outros menus e telas)

@@ -3952,9 +3952,10 @@
   // prioridade). Usada pela tecla Esc e pelo botao/gesto voltar do Android.
   // Retorna true se fechou algo, false se nao havia nada aberto.
   function fecharTopoAberto() {
-    var order = ['cancelModal', 'formulaModal', 'chargesModal', 'costsModal', 'toolsModal', 'priceModal', 'productModal', 'commitModal', 'schedModal', 'addFixModal', 'fixModal', 'fixManageModal', 'fixContractModal'];
+    var order = ['cancelModal', 'formulaModal', 'chargesModal', 'costsModal', 'toolsModal', 'priceModal', 'productModal', 'commitModal', 'schedModal', 'addFixModal', 'fixModal', 'fixManageModal', 'fixContractModal', 'hv-painel'];
     for (var i = 0; i < order.length; i++) {
-      if (document.getElementById(order[i]).classList.contains('open')) {
+      var elTopo = document.getElementById(order[i]);
+      if (elTopo && elTopo.classList.contains('open')) {
         if (order[i] === 'cancelModal') closeCancel();
         else if (order[i] === 'commitModal') closeCommit();
         else if (order[i] === 'schedModal') closeSchedule();
