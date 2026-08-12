@@ -1,0 +1,1 @@
+- Corrigido: o botão "Instalar" do Android agora funciona de verdade — manifest, ícones e service worker passaram a ser arquivos publicados de verdade (não mais embutidos no HTML), que é o que o instalador do Android precisa para completar a instalação

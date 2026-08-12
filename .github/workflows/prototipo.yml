@@ -173,6 +173,17 @@ jobs:
           cp "$PASTA/index.html" index.html
           echo "Raiz do site servindo $PASTA/index.html"
 
+          # Arquivos de PWA (manifest, ícones, service worker): precisam
+          # existir como arquivos reais na raiz — o instalador do
+          # Android/Chrome busca esses caminhos por HTTP, não aceita
+          # data: URI embutido no HTML. Opcionais: só copia se existirem.
+          for f in manifest.json icon-192.png icon-512.png sw.js; do
+            if [ -f "$PASTA/$f" ]; then
+              cp "$PASTA/$f" "$f"
+              echo "Copiado $PASTA/$f -> /$f"
+            fi
+          done
+
       - name: Injetar histórico
         id: hist
         env:

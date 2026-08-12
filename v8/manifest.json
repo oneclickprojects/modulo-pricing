@@ -1,0 +1,13 @@
+{
+  "name": "OneClick Front Office",
+  "short_name": "OneClick",
+  "start_url": "https://oneclickprojects.github.io/modulo-pricing/",
+  "scope": "https://oneclickprojects.github.io/modulo-pricing/",
+  "display": "standalone",
+  "background_color": "#0E1116",
+  "theme_color": "#0E1116",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}
