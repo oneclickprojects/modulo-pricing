@@ -1,0 +1,2 @@
+- App agora instala de verdade no Android/Chrome (sem o ícone do navegador sobreposto no atalho da tela inicial)
+- Selo com a versão atual fica sempre visível na tela; toque nele para ver o histórico completo — não é mais preciso abrir a Toolbox

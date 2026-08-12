@@ -78,7 +78,7 @@ def entradas():
 # Com uma quebra sobrando aqui, cada publicação deixaria uma linha em branco nova.
 TEMPLATE = """<!-- historico-de-versoes -->
 <style>
-#hv-selo{position:fixed;right:10px;bottom:10px;z-index:2147483646;
+#hv-selo{position:fixed;right:10px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:2147483646;
 font:11px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:500;
 padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.22);
 background:rgba(18,22,28,.86);color:#e6edf3;-webkit-backdrop-filter:blur(6px);
@@ -148,37 +148,9 @@ border:1px solid #2f6f4f;border-radius:999px;padding:1px 7px}
   function abrir(){ painel.classList.add('hv-on'); }
   function fechar(){ painel.classList.remove('hv-on'); }
 
-  // Ponto de entrada: um cartão dentro da Toolbox do protótipo, no mesmo
-  // padrão dos outros (.tool-card + ícone do próprio arquivo). Nada de selo
-  // flutuante sobre a interface.
-  function montarCartao(){
-    var grade = document.querySelector('.tools-grid');
-    if (!grade || document.getElementById('hv-card')) return !!grade;
-    var card = document.createElement('div');
-    card.className = 'tool-card';
-    card.id = 'hv-card';
-    card.setAttribute('role', 'button');
-    card.setAttribute('tabindex', '0');
-    card.innerHTML =
-      '<span class="t">Version<br>History' +
-      '<br><small style="color:var(--muted2)">v__VERSAO__</small></span>' +
-      '<svg class="icon ic"><use href="#ic-calendar"></use></svg>';
-    function acionar(){
-      // fecha a Toolbox antes de abrir o painel, se a função existir
-      try { if (typeof closeTools === 'function') closeTools(); } catch (e) {}
-      abrir();
-    }
-    card.addEventListener('click', acionar);
-    card.addEventListener('keydown', function(ev){
-      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); acionar(); }
-    });
-    grade.appendChild(card);
-    return true;
-  }
-
-  // Rede de segurança: se a Toolbox não existir (outra pasta, outra versão do
-  // protótipo), cai para um selo flutuante em vez de ficar sem acesso nenhum.
-  function montarSeloReserva(){
+  // Ponto de entrada: selo flutuante sempre visível na tela (não depende de
+  // abrir a Toolbox). Mostra a versão atual; toca para ver o histórico.
+  function montarSelo(){
     if (document.getElementById('hv-selo')) return;
     var selo = document.createElement('button');
     selo.id = 'hv-selo';
@@ -190,10 +162,7 @@ border:1px solid #2f6f4f;border-radius:999px;padding:1px 7px}
     document.body.appendChild(selo);
   }
 
-  if (!montarCartao()) {
-    // a Toolbox pode ser montada depois; tenta de novo antes de desistir
-    setTimeout(function(){ if (!montarCartao()) montarSeloReserva(); }, 1800);
-  }
+  montarSelo();
 
   document.getElementById('hv-fechar').addEventListener('click', fechar);
   painel.addEventListener('click', function(ev){ if (ev.target === painel) fechar(); });
