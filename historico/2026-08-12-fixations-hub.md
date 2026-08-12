@@ -1,0 +1,3 @@
+- Fixations na Toolbox agora abre uma tela para escolher a ordem (a atual ou um contrato já existente do Portfolio) e depois a entrega, antes de ver ou adicionar fixações
+- Cada entrega mostra atalhos diretos "View" e "+ Add" nessa tela, sem precisar navegar até a ordem em outra tela
+- Corrigido bug em que a tela de "Add Fixation" (e também o Charges dentro do Financial Panel) abria escondida atrás da tela anterior em vez de aparecer por cima

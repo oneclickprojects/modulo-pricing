@@ -600,6 +600,9 @@
     border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden;
     transform:translateY(16px); transition:transform .2s ease;
   }
+  /* (v8-Fix) Tela "especial" do hub de Fixacoes: ordem + entregas num so
+     lugar, precisa de bem mais altura que um sheet de acao rapida. */
+  .modal-sheet.xl{ max-height:97vh; height:97vh; }
   .modal-overlay.open .modal-sheet{ transform:translateY(0); }
   .modal-head{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -640,6 +643,7 @@
     background-repeat:no-repeat; background-position:right 11px center;
   }
   .form-field input::placeholder{ color:var(--muted2); font-weight:500; }
+  .form-field input[readonly]{ background:var(--bg2); color:var(--muted); }
   .form-field input:focus, .form-field select:focus{ outline:none; border-color:var(--blue); }
   .form-row{ display:flex; gap:10px; }
   .form-row .form-field{ flex:1; min-width:0; }
@@ -665,6 +669,72 @@
   .recap .l{ display:block; font-size:8px; font-weight:800; color:var(--muted2); text-transform:uppercase; letter-spacing:.3px; }
   .recap .v{ display:block; font-size:13px; font-weight:800; margin-top:2px; }
   .recap .v.pos{ color:var(--green); } .recap .v.neg{ color:var(--red); }
+
+  /* ============ FIXATIONS ============
+     m-fixbar: link na entrega que abre a tela de Fixações daquela entrega
+     (v8-D15: fixacao virou tela propria). fix-head/fix-card: mesma
+     linguagem visual do recap/contract-card, mas para o painel por
+     entrega. fix-wrap/fix-scroll/fixt: mesmo grid com scroll horizontal e
+     coluna fixa do .chg (Charges), reaproveitado para o Gerenciamento de
+     Fixações. */
+  .m-fixbar{
+    margin-top:8px; padding-top:7px; border-top:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer;
+  }
+  .m-fixbar:active{ opacity:.7; }
+  .m-fixbar .m-fix-badge{ font-size:9px; font-weight:700; color:var(--muted2); }
+  .m-fixbar .m-fix-badge.has{ color:var(--blue); }
+  .m-fixbar .m-fix-cta{ font-size:10.5px; font-weight:800; color:var(--blue); display:flex; align-items:center; gap:4px; }
+  .m-fixbar .m-fix-cta .icon{ width:11px; height:11px; }
+
+  .fix-head{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 16px 0; }
+  .fix-head div{ flex:1 1 30%; min-width:96px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 10px; text-align:center; }
+  .fix-head .l{ display:block; font-size:7.5px; font-weight:800; color:var(--muted2); text-transform:uppercase; letter-spacing:.3px; }
+  .fix-head .v{ display:block; font-size:12.5px; font-weight:800; margin-top:2px; }
+
+  .fix-card{ margin:10px 16px 0; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:11px 13px; }
+  .fix-card .top{ display:flex; align-items:center; gap:8px; }
+  .fix-card .sym{ font-size:12.5px; font-weight:800; flex:1; }
+  .fix-card .meta{ font-size:10.5px; color:var(--muted); margin-top:4px; }
+  .fix-card .nums{ display:flex; gap:14px; margin-top:8px; flex-wrap:wrap; }
+  .fix-card .nums .n .l{ font-size:8.5px; color:var(--muted2); font-weight:700; text-transform:uppercase; }
+  .fix-card .nums .n .v{ font-size:12px; font-weight:800; margin-top:1px; }
+
+  /* Hub de Fixacoes (Toolbox): card de ordem selecionavel + card de
+     entrega com atalho direto pra ver/adicionar fixacoes daquela entrega. */
+  .contract-card.sel{ border-color:var(--blue); box-shadow:0 0 0 1px var(--blue) inset; }
+  .fixhub-dcard{ margin:10px 16px 0; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:11px 13px; }
+  .fixhub-dcard .top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .fixhub-dcard .sym{ font-size:12.5px; font-weight:800; }
+  .fixhub-dcard .qty{ font-size:12px; font-weight:800; color:var(--muted); }
+  .fixhub-dcard .meta{ font-size:10.5px; color:var(--muted2); margin-top:3px; }
+  .fixhub-dcard .actions{ display:flex; gap:8px; margin-top:9px; }
+  .fixhub-dcard .actions .pill-btn{ flex:1; text-align:center; }
+
+  .fix-group-title{ margin:16px 16px 0; }
+  .fix-group-title:first-child{ margin-top:0; }
+  .fix-wrap{ margin:10px 16px 0; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .fix-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .fixt{ border-collapse:collapse; font-size:10.5px; white-space:nowrap; min-width:100%; }
+  .fixt th{
+    font-size:7.5px; font-weight:800; color:var(--muted2); text-transform:uppercase; letter-spacing:.3px;
+    text-align:left; padding:8px 9px; background:var(--card2); border-bottom:1px solid var(--line);
+  }
+  .fixt td{ padding:8px 9px; font-weight:700; color:var(--text); border-bottom:1px solid var(--line); }
+  .fixt tr:last-child td{ border-bottom:none; }
+  .fixt th.num, .fixt td.num{ text-align:right; }
+  .fixt th:first-child, .fixt td:first-child{
+    position:sticky; left:0; z-index:2; box-shadow:1px 0 0 var(--line); font-weight:800;
+  }
+  .fixt th:first-child{ background:var(--card2); }
+  .fixt td:first-child{ background:var(--card); color:var(--muted); }
+  .fixt tr.tot td{ background:var(--card2); font-weight:800; }
+  /* Pill de status: mesmas cores de .contract-card .status, so que
+     tambem disponivel dentro de fix-card e das tabelas do Gerenciamento. */
+  .fix-card .status, .fixt .status{ font-size:9px; font-weight:800; padding:3px 8px; border-radius:8px; text-transform:uppercase; letter-spacing:.3px; display:inline-block; white-space:nowrap; }
+  .fix-card .status.sim, .fixt .status.sim{ background:var(--blue-soft); color:var(--blue); }
+  .fix-card .status.pend, .fixt .status.pend{ background:var(--amber-soft); color:var(--amber); }
+  .fix-card .status.aprov, .fixt .status.aprov{ background:var(--green-soft); color:var(--green); }
 
   /* (2) Segmento de precificacao, agora dentro do pop-up do Price */
   .seg{ display:flex; background:var(--card); border:1px solid var(--line); border-radius:11px; padding:3px; }
@@ -1173,6 +1243,7 @@
       <div class="dsched-actions">
         <button class="pill-btn" type="button" onclick="addMonth()">+ Month</button>
         <button class="pill-btn ghost" type="button" onclick="distributeEvenly()">Even split</button>
+        <button class="pill-btn ghost" type="button" onclick="openFixManage()">Fixation Management</button>
       </div>
       <div class="dsched-body">
         <div id="month-list"></div>
@@ -1420,10 +1491,45 @@
   </div>
 </div>
 
+<!-- ============ (12) COST BREAKDOWN ============ -->
+<div class="modal-overlay" id="costsModal" onclick="if(event.target===this) closeCosts()">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div>
+        <h2>Financial Panel</h2>
+        <div class="sub">Purchase summary · same grid as OneClick</div>
+      </div>
+      <button class="icon-btn" onclick="closeCosts()" title="Close"><svg class="icon"><use href="#ic-x"></use></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="pan-wrap">
+        <div class="cost-head">
+          <svg class="icon"><use href="#ic-search"></use></svg>
+          <span class="t">Summary · by item</span>
+        </div>
+        <div class="pan-scroll">
+          <table class="pan"><thead><tr>
+            <th>Item</th><th>Qty</th><th>Cost R$/t</th><th>Cost US$/t</th>
+            <th>Exp. R$</th><th>Exp. US$</th><th>Basis c/lb</th><th>FX screen</th><th>FX</th>
+          </tr></thead><tbody id="pan-rows"></tbody></table>
+        </div>
+        <div class="pan-hint">Swipe the table sideways · Exposure US$ = Basis c/lb × 22.0462 × qty</div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-primary" onclick="closeCosts()">Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ (v8-H) CHARGES — mesma grade da tela de Charges do OneClick ============
      Chega por dois caminhos: pela lupa da linha Charges no Painel Financeiro
-     e pelo botao Charges em Logistics & Routes. Nao e editavel: a despesa vem
-     do cadastro e a cidade vem do destino da rota. -->
+     e pelo botao Charges em Logistics & Routes. Precisa vir DEPOIS do
+     costsModal no DOM: os dois .modal-overlay compartilham o mesmo
+     z-index, e a lupa abre isso por cima do Painel Financeiro sem fechar
+     ele — quem vem depois no HTML e que fica visivel. Nao e editavel: a
+     despesa vem do cadastro e a cidade vem do destino da rota. -->
 <div class="modal-overlay" id="chargesModal" onclick="if(event.target===this) closeCharges()">
   <div class="modal-sheet">
     <div class="modal-head">
@@ -1463,38 +1569,6 @@
     </div>
     <div class="modal-foot">
       <button type="button" class="btn-primary" onclick="closeCharges()">Done</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ (12) COST BREAKDOWN ============ -->
-<div class="modal-overlay" id="costsModal" onclick="if(event.target===this) closeCosts()">
-  <div class="modal-sheet">
-    <div class="modal-head">
-      <div>
-        <h2>Financial Panel</h2>
-        <div class="sub">Purchase summary · same grid as OneClick</div>
-      </div>
-      <button class="icon-btn" onclick="closeCosts()" title="Close"><svg class="icon"><use href="#ic-x"></use></svg></button>
-    </div>
-    <div class="modal-body">
-      <div class="pan-wrap">
-        <div class="cost-head">
-          <svg class="icon"><use href="#ic-search"></use></svg>
-          <span class="t">Summary · by item</span>
-        </div>
-        <div class="pan-scroll">
-          <table class="pan"><thead><tr>
-            <th>Item</th><th>Qty</th><th>Cost R$/t</th><th>Cost US$/t</th>
-            <th>Exp. R$</th><th>Exp. US$</th><th>Basis c/lb</th><th>FX screen</th><th>FX</th>
-          </tr></thead><tbody id="pan-rows"></tbody></table>
-        </div>
-        <div class="pan-hint">Swipe the table sideways · Exposure US$ = Basis c/lb × 22.0462 × qty</div>
-      </div>
-
-    </div>
-    <div class="modal-foot">
-      <button type="button" class="btn-primary" onclick="closeCosts()">Done</button>
     </div>
   </div>
 </div>
@@ -1566,13 +1640,217 @@
         <div class="tool-card" onclick="showToast('Route registry — next phase')"><span class="t">Route<br>Registry</span><svg class="icon ic"><use href="#ic-truck"></use></svg></div>
         <div class="tool-card wip" onclick="wip('Sales simulation')"><span class="t">Sales<br>Simulation</span><svg class="icon ic"><use href="#ic-trending-down"></use></svg></div>
         <div class="tool-card wip" onclick="wip('Washout')"><span class="t">Washout</span><svg class="icon ic"><use href="#ic-arrows"></use></svg></div>
-        <div class="tool-card wip" onclick="wip('Fixations')"><span class="t">Fixations</span><svg class="icon ic"><use href="#ic-tag"></use></svg></div>
+        <div class="tool-card" onclick="closeTools(); openFixHub()"><span class="t">Fixations</span><svg class="icon ic"><use href="#ic-tag"></use></svg></div>
         <div class="tool-card wip" onclick="wip('Derivatives')"><span class="t">Derivatives</span><svg class="icon ic"><use href="#ic-layers"></use></svg></div>
         <div class="tool-card" onclick="closeTools(); askClearAll()"><span class="t">Clear all<br><small style="color:var(--muted2)">fill from scratch</small></span><svg class="icon ic"><use href="#ic-eraser"></use></svg></div>
       </div>
     </div>
     <div class="modal-foot">
       <button type="button" class="btn-ghost" onclick="closeTools()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FIXATIONS — CHOOSE CONTRACT (hub: precisa vir ANTES de
+     fixModal/addFixModal/fixManageModal no DOM — todos os .modal-overlay
+     compartilham o mesmo z-index, entao quem abre "por cima" so fica
+     visivel se estiver depois no HTML) ============ -->
+<div class="modal-overlay" id="fixContractModal" onclick="if(event.target===this) closeSheet('fixContractModal')">
+  <div class="modal-sheet xl">
+    <div class="modal-head">
+      <div>
+        <h2>Fixations</h2>
+        <div class="sub">Pick an order, then a delivery, to view or add fixations</div>
+      </div>
+      <button class="icon-btn" onclick="closeSheet('fixContractModal')" title="Close"><svg class="icon"><use href="#ic-x"></use></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="fix-group-title"><div class="form-sec"><span class="t">Order</span><span class="ln"></span></div></div>
+      <div id="fixhub-orders"></div>
+      <div class="fix-group-title"><div class="form-sec"><span class="t" id="fixhub-del-title">Deliveries</span><span class="ln"></span></div></div>
+      <div id="fixhub-deliveries"></div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-primary" onclick="openFixManageFromHub()">View Fixation Management</button>
+      <div style="height:8px;"></div>
+      <button type="button" class="btn-ghost" onclick="closeSheet('fixContractModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FIXATIONS — PER DELIVERY ============ -->
+<div class="modal-overlay" id="fixModal" onclick="if(event.target===this) closeSheet('fixModal')">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div>
+        <h2>Fixations</h2>
+        <div class="sub" id="fix-sub">Delivery —</div>
+      </div>
+      <button class="icon-btn" onclick="closeSheet('fixModal')" title="Close"><svg class="icon"><use href="#ic-x"></use></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="fix-head" id="fix-head"></div>
+      <div id="fix-list"></div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-primary" onclick="openAddFix()">+ Add fixation</button>
+      <div style="height:8px;"></div>
+      <button type="button" class="btn-ghost" onclick="solicitarTudo()">Request all</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADD FIXATION ============ -->
+<div class="modal-overlay" id="addFixModal" onclick="if(event.target===this) closeSheet('addFixModal')">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div>
+        <h2>Add Fixation</h2>
+        <div class="sub">Reference prices come from the delivery's screen and FX</div>
+      </div>
+      <button class="icon-btn" onclick="closeSheet('addFixModal')" title="Close"><svg class="icon"><use href="#ic-x"></use></svg></button>
+    </div>
+    <div class="modal-body" id="addFixBody">
+      <div class="form-sec"><span class="t">Fixation</span><span class="ln"></span></div>
+      <div class="form-list">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Type</label>
+            <select id="af-tipo">
+              <option value="Fx">FX</option>
+              <option value="NY" selected>NY</option>
+              <option value="FlatBRL">Flat Price BRL</option>
+              <option value="FlatUSD">Flat Price USD</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Price type</label>
+            <select id="af-tipopreco">
+              <option value="Efetivo" selected>Effective</option>
+              <option value="Provisorio">Provisional</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Fixation date</label>
+            <input type="date" id="af-data">
+          </div>
+          <div class="form-field">
+            <label>Fixation qty (t)</label>
+            <input id="af-qtd" inputmode="decimal" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Price</label>
+            <input id="af-preco" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="form-field">
+            <label>Pricing</label>
+            <select id="af-precificacao">
+              <option value="DIF (Cts/Lb)" selected>DIF (Cts/Lb)</option>
+              <option value="Flat">Flat</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Provisional fixation balance <span class="opt">— system</span></label>
+            <input id="af-saldo-prov" readonly>
+          </div>
+          <div class="form-field">
+            <label>Provisional price <span class="opt">— system</span></label>
+            <input id="af-preco-prov" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Basis adjustment</label>
+            <input id="af-basis-ajuste" inputmode="decimal" value="0.00">
+          </div>
+          <div class="form-field">
+            <label>Fixed basis <span class="opt">— system</span></label>
+            <input id="af-basis-fixado" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Implicit basis <span class="opt">— system</span></label>
+            <input id="af-basis-implicito" readonly>
+          </div>
+          <div class="form-field">
+            <label>Batches (lots) <span class="opt">— system</span></label>
+            <input id="af-lotes" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Mkt ref. price (BRL/t) <span class="opt">— system</span></label>
+            <input id="af-mktref" readonly>
+          </div>
+          <div class="form-field">
+            <label>Mkt ref. + basis (BRL/t) <span class="opt">— system</span></label>
+            <input id="af-mktref-basis" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>NY ref. price (Cts/Lb) <span class="opt">— system</span></label>
+            <input id="af-refny" readonly>
+          </div>
+          <div class="form-field">
+            <label>FX ref. price (BRL/USD) <span class="opt">— system</span></label>
+            <input id="af-reffx" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>NY screen <span class="opt">— system</span></label>
+            <input id="af-telany" readonly>
+          </div>
+          <div class="form-field">
+            <label>FX screen <span class="opt">— system</span></label>
+            <input id="af-telafx" readonly>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Notional (USD) <span class="opt">— system</span></label>
+            <input id="af-notional" readonly>
+          </div>
+          <div class="form-field">
+            <label>Order type</label>
+            <select id="af-tipoordem">
+              <option value="ATM" selected>ATM</option>
+              <option value="Limit">Limit</option>
+              <option value="Market">Market</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-primary" onclick="saveFixation()">Save</button>
+      <div style="height:8px;"></div>
+      <button type="button" class="btn-ghost" onclick="closeSheet('addFixModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FIXATION MANAGEMENT ============ -->
+<div class="modal-overlay" id="fixManageModal" onclick="if(event.target===this) closeSheet('fixManageModal')">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <div>
+        <h2>Fixation Management</h2>
+        <div class="sub" id="fixManageSub">All fixations across every delivery of this order</div>
+      </div>
+      <button class="icon-btn" onclick="closeSheet('fixManageModal')" title="Close"><svg class="icon"><use href="#ic-x"></use></svg></button>
+    </div>
+    <div class="modal-body" id="fixManageBody"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn-primary" onclick="closeSheet('fixManageModal')">Done</button>
     </div>
   </div>
 </div>
@@ -1913,6 +2191,51 @@
   }
 
   // ============================================================
+  // FIXATIONS — dados vivem fora do DOM (fixId -> array de fixacoes),
+  // porque .mrow e recriado do zero em varios fluxos (addMonth,
+  // restoreState, seedMonths, clearForm). Mesmo padrao de identidade
+  // estavel que routeSeq/data-route ja usa para rotas, abaixo.
+  // ============================================================
+  var fixSeq = 1;
+  var FIXATIONS = {};
+  // null = fixacoes ao vivo da ordem em tela (monthRows()/FIXATIONS acima).
+  // Um id de contrato = fixacoes estaticas de demonstracao de um contrato ja
+  // existente, escolhido na tela "Fixations" (aberta pela Toolbox).
+  var CURRENT_FIX_CONTRACT = null;
+  // Mesma forma de uma ordem ao vivo (entregas, cada uma com sua lista de
+  // fixacoes), so que estatica — os dois contratos ja existentes no
+  // Portfolio (PORTFOLIO.pending/positions) tambem precisam de entregas
+  // proprias para a tela "Fixations" deixar escolher qual entrega.
+  var DEMO_CONTRACTS = {
+    'PO-2026-0041': {
+      deliveries: [
+        { finalIso: '2026-09-12', qty: 150.00, board: 'Z26', fxBoard: 'V26', fixations: [
+          { id: 'FX-2026-0101', tipo: 'NY', tipoPreco: 'Efetivo', dataFixacao: '2026-08-04', qtd: 150.00, preco: 71.20, telaNY: 'Z26', telaFx: 'V26', notionalUsd: 235235, statusFixacao: 'confirmado', statusConfirmacao: 'Não Vinculado' }
+        ] },
+        { finalIso: '2026-10-12', qty: 150.00, board: 'Z26', fxBoard: 'V26', fixations: [
+          { id: 'FX-2026-0102', tipo: 'Fx', tipoPreco: 'Efetivo', dataFixacao: '2026-08-05', qtd: 100.00, preco: 5.32, telaNY: 'Z26', telaFx: 'V26', notionalUsd: 156800, statusFixacao: 'pendente', statusConfirmacao: 'Não Vinculado' }
+        ] }
+      ]
+    },
+    'CTN-2026-0142': {
+      deliveries: [
+        { finalIso: '2026-08-28', qty: 250.00, board: 'Z26', fxBoard: 'V26', fixations: [
+          { id: 'FX-2026-0201', tipo: 'NY', tipoPreco: 'Efetivo', dataFixacao: '2026-07-29', qtd: 250.00, preco: 68.40, telaNY: 'Z26', telaFx: 'V26', notionalUsd: 377102, statusFixacao: 'confirmado', statusConfirmacao: 'Não Vinculado' }
+        ] },
+        { finalIso: '2026-09-28', qty: 250.00, board: 'Z26', fxBoard: 'V26', fixations: [
+          { id: 'FX-2026-0202', tipo: 'FlatBRL', tipoPreco: 'Efetivo', dataFixacao: '2026-07-30', qtd: 150.00, preco: 10250.00, telaNY: 'Z26', telaFx: 'V26', notionalUsd: 226261, statusFixacao: 'confirmado', statusConfirmacao: 'Não Vinculado' },
+          { id: 'FX-2026-0203', tipo: 'FlatUSD', tipoPreco: 'Provisorio', dataFixacao: '2026-07-31', qtd: 100.00, preco: 1980.00, telaNY: 'Z26', telaFx: 'V26', notionalUsd: 150840, statusFixacao: 'pendente', statusConfirmacao: 'Não Vinculado' }
+        ] }
+      ]
+    }
+  };
+  var FIX_STATUS_LABEL = { nao_solicitado: 'Not requested', pendente: 'Pending', confirmado: 'Confirmed' };
+  var FIX_STATUS_CLASS = { nao_solicitado: 'sim', pendente: 'pend', confirmado: 'aprov' };
+  var FIX_TYPE_LABEL = { Fx: 'FX Fixations', NY: 'NY Fixations', FlatBRL: 'Flat Price BRL Fixations', FlatUSD: 'Flat Price USD Fixations' };
+  var FIX_TYPE_SHORT = { Fx: 'FX', NY: 'NY', FlatBRL: 'Flat Price BRL', FlatUSD: 'Flat Price USD' };
+  var FIX_PRICE_TYPE_LABEL = { Efetivo: 'Effective', Provisorio: 'Provisional' };
+
+  // ============================================================
   // ROUTES
   // ============================================================
   var routeSeq = 1;
@@ -2016,6 +2339,7 @@
   function monthRowHtml(o) {
     o = o || {};
     var blank = !!o.blank;
+    var fixId = o.fixId || fixSeq++;
     var finalIso = o.finalIso || (blank ? '' : '2026-07-10');
     var ref = o.ref || (finalIso ? refLabelFromIso(finalIso) : MONTH_LIST[0]);
     var board = boardForMonth(ref);
@@ -2032,7 +2356,7 @@
     // Faixa 3 e leitura: spread, lotes e a conta do market basis.
     // (v8-D15) Sem "+ Fix": fixacao vira tela propria.
     return [
-      '<div class="mrow">',
+      '<div class="mrow" data-fix-id="' + fixId + '">',
       '  <div class="mrow-lead">',
       cell('Final delivery', '<div class="m-lead"><input type="date" class="m-final" value="' + finalIso + '"></div>', 'c-final'),
       cell('Qty', '<div class="m-qty-wrap"><input class="m-qty" value="' + (blank ? '' : fmt(o.qty || 0, 2)) + '" inputmode="decimal" placeholder="0.00"><span class="m-unit">t</span></div>', 'c-qty'),
@@ -2053,6 +2377,10 @@
       cell('Route', '<select class="m-route">' + routeOptionsHtml(o.routeIdx) + '</select>', 'hid'),
       '  </div>',
       '  <div class="m-info">—</div>',
+      '  <div class="m-fixbar" onclick="openFixSheet(this.closest(\'.mrow\'))">',
+      '    <span class="m-fix-badge" id="fixbadge-' + fixId + '">No fixations</span>',
+      '    <span class="m-fix-cta">Fixations <svg class="icon"><use href="#ic-chevron-right"></use></svg></span>',
+      '  </div>',
       '</div>'
     ].join('');
   }
@@ -2071,6 +2399,7 @@
     var row = btn.closest('.mrow');
     if (!row) return;
     if (monthRows().length <= 1) { showToast('At least one delivery month is required.'); return; }
+    delete FIXATIONS[row.dataset.fixId];
     row.remove(); distributeEvenly();
   }
   // (v7) Regra do OneClick (DeliveryService.DistributeTotalQuantityInDeliveries):
@@ -2176,6 +2505,363 @@
   function openProduct() { openSheet('productModal'); }
   function closeProduct() { closeSheet('productModal'); updateProductBlock(); recalc(); }
   function openCosts() { renderPanel(); openSheet('costsModal'); }
+
+  // ============================================================
+  // FIXATIONS — tela por entrega (v8-D15: fixacao virou tela propria)
+  // CURRENT_FIX_CTX abstrai de onde vem a entrega: { source:'live', row }
+  // para a ordem em tela (fixListFor/FIXATIONS, chaveado por data-fix-id) ou
+  // { source:'demo', contractId, deliveryIdx } para um contrato ja
+  // existente escolhido na tela "Fixations" (DEMO_CONTRACTS, estatico).
+  // Todo o resto (renderFixSheet, solicitar, formulario) le so pelo ctx.
+  // ============================================================
+  var CURRENT_FIX_CTX = null;
+  function fixListFor(row) {
+    var id = row.dataset.fixId;
+    return FIXATIONS[id] || (FIXATIONS[id] = []);
+  }
+  function ctxFixList(ctx) {
+    if (!ctx) return [];
+    return ctx.source === 'live' ? fixListFor(ctx.row) : DEMO_CONTRACTS[ctx.contractId].deliveries[ctx.deliveryIdx].fixations;
+  }
+  function ctxDelivery(ctx) {
+    if (ctx.source === 'live') {
+      return {
+        finalIso: ctx.row.querySelector('.m-final').value,
+        qty: parseNum(ctx.row.querySelector('.m-qty').value),
+        board: rowBoard(ctx.row), fxBoard: ctx.row.querySelector('.m-fxscr').value
+      };
+    }
+    var d = DEMO_CONTRACTS[ctx.contractId].deliveries[ctx.deliveryIdx];
+    return { finalIso: d.finalIso, qty: d.qty, board: d.board, fxBoard: d.fxBoard };
+  }
+  function ctxOrderLabel(ctx) {
+    return ctx.source === 'live' ? (editingId || 'This order (unsaved)') : ctx.contractId;
+  }
+  function openFixSheet(row) {
+    CURRENT_FIX_CTX = { source: 'live', row: row };
+    renderFixSheet();
+    openSheet('fixModal');
+  }
+  // (v8-Fix) Soma o que ja esta fixado, para o header da tela por entrega e
+  // para o Gerenciamento de Fixacoes. Pendente conta junto com Confirmado —
+  // so "Nao solicitado" ainda nao é considerado fixado de fato.
+  function computeFixTotals(list) {
+    var t = { fx: 0, ny: 0, provNy: 0, flat: 0 };
+    (list || []).forEach(function (f) {
+      if (f.statusFixacao === 'nao_solicitado') return;
+      if (f.tipo === 'Fx') t.fx += f.notionalUsd;
+      else if (f.tipo === 'NY') { if (f.tipoPreco === 'Provisorio') t.provNy += f.qtd; else t.ny += f.qtd; }
+      else t.flat += f.qtd;
+    });
+    return t;
+  }
+  function paintFixBadge(row) {
+    var list = fixListFor(row);
+    var badge = document.getElementById('fixbadge-' + row.dataset.fixId);
+    if (!badge) return;
+    if (!list.length) { badge.textContent = 'No fixations'; badge.classList.remove('has'); }
+    else { badge.textContent = list.length + (list.length === 1 ? ' fixation' : ' fixations'); badge.classList.add('has'); }
+  }
+  function renderFixSheet() {
+    var ctx = CURRENT_FIX_CTX;
+    if (!ctx) return;
+    var list = ctxFixList(ctx);
+    var d = ctxDelivery(ctx);
+    var t = computeFixTotals(list);
+    setTxt('fix-sub', 'Delivery ' + (d.finalIso ? brDate(d.finalIso) : '—'));
+    document.getElementById('fix-head').innerHTML =
+      '<div><span class="l">Order</span><span class="v">' + ctxOrderLabel(ctx) + '</span></div>' +
+      '<div><span class="l">Delivery</span><span class="v">' + (d.finalIso ? brDate(d.finalIso) : '—') + '</span></div>' +
+      '<div><span class="l">Qty delivery</span><span class="v">' + fmt(d.qty, 2) + ' t</span></div>' +
+      '<div><span class="l">Fx fixed</span><span class="v">US$ ' + fmt(t.fx, 0) + '</span></div>' +
+      '<div><span class="l">NY fixed</span><span class="v">' + fmt(t.ny, 2) + ' t</span></div>' +
+      '<div><span class="l">Provisional NY</span><span class="v">' + fmt(t.provNy, 2) + ' t</span></div>' +
+      '<div><span class="l">Flat price fixed</span><span class="v">' + fmt(t.flat, 2) + ' t</span></div>';
+    var body = document.getElementById('fix-list');
+    if (!list.length) {
+      body.innerHTML = '<div class="empty-state"><svg class="icon"><use href="#ic-search"></use></svg><br>No fixations yet</div>';
+    } else {
+      body.innerHTML = list.map(function (f) {
+        return '<div class="fix-card">' +
+          '<div class="top"><span class="sym">' + f.id + '</span>' +
+          '<span class="status ' + FIX_STATUS_CLASS[f.statusFixacao] + '">' + FIX_STATUS_LABEL[f.statusFixacao] + '</span></div>' +
+          '<div class="meta">' + FIX_TYPE_SHORT[f.tipo] + ' · ' + FIX_PRICE_TYPE_LABEL[f.tipoPreco] + ' · ' + brDate(f.dataFixacao) + '</div>' +
+          '<div class="nums">' +
+          '<div class="n"><div class="l">Qty</div><div class="v">' + fmt(f.qtd, 2) + ' t</div></div>' +
+          '<div class="n"><div class="l">Price</div><div class="v">' + fmt(f.preco, 4) + '</div></div>' +
+          '<div class="n"><div class="l">Notional</div><div class="v">US$ ' + fmt(f.notionalUsd, 0) + '</div></div>' +
+          '</div></div>';
+      }).join('');
+    }
+    if (ctx.source === 'live') paintFixBadge(ctx.row);
+  }
+  function solicitarTudo() {
+    var ctx = CURRENT_FIX_CTX;
+    if (!ctx) return;
+    var list = ctxFixList(ctx);
+    var n = 0;
+    list.forEach(function (f) { if (f.statusFixacao === 'nao_solicitado') { f.statusFixacao = 'pendente'; n++; } });
+    if (!n) { showToast('No fixations waiting to be requested'); return; }
+    refreshFixViews();
+    showToast(n + (n === 1 ? ' fixation' : ' fixations') + ' sent for approval');
+  }
+
+  // ============================================================
+  // FIXATIONS — formulario "Add Fixation"
+  // Campos read-only (marcados "— system" no label) vem da tela/FX da
+  // propria entrega, com as mesmas constantes que o resto do prototipo ja
+  // usa (FACTOR_LB_TON, LOT_LB, curveFor) — numero plausivel, nao contabil.
+  // ============================================================
+  function setVal(id, v) { var e = document.getElementById(id); if (e) e.value = v; }
+  function openAddFix() {
+    var ctx = CURRENT_FIX_CTX;
+    if (!ctx) return;
+    var d = ctxDelivery(ctx);
+    document.getElementById('af-tipo').value = 'NY';
+    document.getElementById('af-tipopreco').value = 'Efetivo';
+    document.getElementById('af-data').value = todayIso();
+    document.getElementById('af-qtd').value = '';
+    document.getElementById('af-preco').value = fmt(curveFor(d.board).c, 2);
+    document.getElementById('af-precificacao').value = 'DIF (Cts/Lb)';
+    document.getElementById('af-basis-ajuste').value = fmt(0, 2);
+    document.getElementById('af-tipoordem').value = 'ATM';
+    setVal('af-telany', d.board);
+    setVal('af-telafx', d.fxBoard);
+    recalcAddFix();
+    openSheet('addFixModal');
+  }
+  function recalcAddFix() {
+    var ctx = CURRENT_FIX_CTX;
+    if (!ctx) return;
+    var d = ctxDelivery(ctx);
+    var c = curveFor(d.board), fxc = curveFor(d.fxBoard);
+    var tipo = document.getElementById('af-tipo').value;
+    var tipoPreco = document.getElementById('af-tipopreco').value;
+    var qtd = getNum('af-qtd');
+    var preco = getNum('af-preco');
+    var basisAjuste = getNum('af-basis-ajuste');
+
+    var basisFixado = (tipo === 'NY') ? (preco - c.c) : null;
+    var basisImplicito = (basisFixado != null) ? (basisFixado + basisAjuste) : null;
+    var mktRef = (c.c / 100) * FACTOR_LB_TON * fxc.fx;
+    var mktRefBasis = mktRef + ((basisImplicito || 0) / 100) * FACTOR_LB_TON * fxc.fx;
+    var lotes = (qtd * FACTOR_LB_TON) / LOT_LB;
+    var notional = qtd * (FACTOR_LB_TON / 100) * c.c;
+
+    setVal('af-saldo-prov', tipoPreco === 'Provisorio' ? fmt(qtd, 2) : '—');
+    setVal('af-preco-prov', tipoPreco === 'Provisorio' ? fmt(preco, 4) : '—');
+    setVal('af-basis-fixado', basisFixado != null ? fmt(basisFixado, 2) : '—');
+    setVal('af-basis-implicito', basisImplicito != null ? fmt(basisImplicito, 2) : '—');
+    setVal('af-mktref', fmt(mktRef, 2));
+    setVal('af-mktref-basis', fmt(mktRefBasis, 2));
+    setVal('af-lotes', fmt(lotes, 2));
+    setVal('af-refny', fmt(c.c, 2));
+    setVal('af-reffx', fmt(fxc.fx, 4));
+    setVal('af-notional', fmt(notional, 0));
+  }
+  document.getElementById('addFixBody').addEventListener('input', recalcAddFix);
+  document.getElementById('addFixBody').addEventListener('change', recalcAddFix);
+  function saveFixation() {
+    var ctx = CURRENT_FIX_CTX;
+    if (!ctx) return;
+    var qtd = getNum('af-qtd');
+    if (!(qtd > 0)) { showToast('Enter the fixation quantity'); return; }
+    var preco = getNum('af-preco');
+    if (!(preco > 0)) { showToast('Enter the price'); return; }
+    var f = {
+      id: nextId('FX'),
+      tipo: document.getElementById('af-tipo').value,
+      tipoPreco: document.getElementById('af-tipopreco').value,
+      dataFixacao: document.getElementById('af-data').value,
+      qtd: qtd,
+      preco: preco,
+      precificacao: document.getElementById('af-precificacao').value,
+      basisAjuste: getNum('af-basis-ajuste'),
+      qtdLotes: getNum('af-lotes'),
+      telaNY: document.getElementById('af-telany').value,
+      telaFx: document.getElementById('af-telafx').value,
+      notionalUsd: getNum('af-notional'),
+      tipoOrdem: document.getElementById('af-tipoordem').value,
+      statusFixacao: 'nao_solicitado',
+      statusConfirmacao: 'Não Vinculado'
+    };
+    ctxFixList(ctx).push(f);
+    closeSheet('addFixModal');
+    refreshFixViews();
+    showToast('Fixation added — Not requested');
+  }
+  // (v8-Fix) Um "Save"/"Request all" pode ter sido disparado a partir de
+  // varias telas (sheet da entrega, hub de contratos, gerenciamento) —
+  // repinta so as que estiverem realmente abertas.
+  function refreshFixViews() {
+    if (document.getElementById('fixModal').classList.contains('open')) renderFixSheet();
+    if (CURRENT_FIX_CTX && CURRENT_FIX_CTX.source === 'live') paintFixBadge(CURRENT_FIX_CTX.row);
+    if (document.getElementById('fixManageModal').classList.contains('open')) renderFixManage();
+    if (document.getElementById('fixContractModal').classList.contains('open')) renderFixHub();
+  }
+
+  // ============================================================
+  // FIXATIONS — Gerenciamento (todas as entregas, agrupado por tipo)
+  // ============================================================
+  function allFixations() {
+    // Contrato existente escolhido na tela "Fixations": dados estaticos de
+    // demonstracao, nao as entregas da ordem em tela.
+    if (CURRENT_FIX_CONTRACT) {
+      var out2 = [];
+      var c2 = DEMO_CONTRACTS[CURRENT_FIX_CONTRACT];
+      (c2 ? c2.deliveries : []).forEach(function (d) {
+        d.fixations.forEach(function (f) {
+          out2.push({
+            id: f.id, tipo: f.tipo, tipoPreco: f.tipoPreco, dataFixacao: f.dataFixacao,
+            qtd: f.qtd, preco: f.preco, telaNY: f.telaNY, telaFx: f.telaFx,
+            notionalUsd: f.notionalUsd, statusFixacao: f.statusFixacao,
+            statusConfirmacao: f.statusConfirmacao, finalIso: d.finalIso
+          });
+        });
+      });
+      return out2;
+    }
+    var out = [];
+    monthRows().forEach(function (row) {
+      var finalIso = row.querySelector('.m-final').value;
+      fixListFor(row).forEach(function (f) {
+        out.push({
+          id: f.id, tipo: f.tipo, tipoPreco: f.tipoPreco, dataFixacao: f.dataFixacao,
+          qtd: f.qtd, preco: f.preco, telaNY: f.telaNY, telaFx: f.telaFx,
+          notionalUsd: f.notionalUsd, statusFixacao: f.statusFixacao,
+          statusConfirmacao: f.statusConfirmacao, finalIso: finalIso
+        });
+      });
+    });
+    return out;
+  }
+  function fixManageGroupHtml(tipo, items) {
+    var head = '<div class="fix-group-title"><div class="form-sec"><span class="t">' + FIX_TYPE_LABEL[tipo] + '</span><span class="ln"></span></div></div>';
+    if (!items.length) {
+      return head + '<div class="form-note" style="margin:8px 16px 0;">No fixations of this type yet.</div>';
+    }
+    var sumQtd = 0, sumNotional = 0, sumPrecoW = 0;
+    var rows = items.map(function (f) {
+      sumQtd += f.qtd; sumNotional += f.notionalUsd; sumPrecoW += f.preco * f.qtd;
+      return '<tr>' +
+        '<td>' + f.id + '</td>' +
+        '<td>' + brDate(f.dataFixacao) + '</td>' +
+        '<td class="num">' + fmt(f.qtd, 2) + '</td>' +
+        '<td class="num">' + fmt(f.preco, 4) + '</td>' +
+        '<td class="num">' + fmt(f.notionalUsd, 0) + '</td>' +
+        '<td>' + (f.telaNY || '—') + '</td>' +
+        '<td>' + (f.telaFx || '—') + '</td>' +
+        '<td>' + brDate(f.finalIso) + '</td>' +
+        '<td><span class="status ' + FIX_STATUS_CLASS[f.statusFixacao] + '">' + FIX_STATUS_LABEL[f.statusFixacao] + '</span></td>' +
+        '<td>' + FIX_PRICE_TYPE_LABEL[f.tipoPreco] + '</td>' +
+        '<td>' + f.statusConfirmacao + '</td>' +
+        '</tr>';
+    }).join('');
+    var avgPreco = sumQtd ? (sumPrecoW / sumQtd) : 0;
+    var totRow = '<tr class="tot"><td>Avg / total</td><td>—</td>' +
+      '<td class="num">' + fmt(sumQtd, 2) + '</td>' +
+      '<td class="num">' + fmt(avgPreco, 4) + '</td>' +
+      '<td class="num">' + fmt(sumNotional, 0) + '</td>' +
+      '<td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+    return head + '<div class="fix-wrap"><div class="fix-scroll"><table class="fixt"><thead><tr>' +
+      '<th>ID</th><th>Date</th><th class="num">Qty (t)</th><th class="num">Price</th><th class="num">Notional (USD)</th>' +
+      '<th>NY screen</th><th>FX screen</th><th>Final delivery</th><th>Status</th><th>Price type</th><th>Confirmation</th>' +
+      '</tr></thead><tbody>' + rows + totRow + '</tbody></table></div></div>';
+  }
+  function renderFixManage() {
+    var byType = { Fx: [], NY: [], FlatBRL: [], FlatUSD: [] };
+    allFixations().forEach(function (f) { (byType[f.tipo] || byType.NY).push(f); });
+    document.getElementById('fixManageBody').innerHTML =
+      ['Fx', 'NY', 'FlatBRL', 'FlatUSD'].map(function (t) { return fixManageGroupHtml(t, byType[t]); }).join('');
+    setTxt('fixManageSub', CURRENT_FIX_CONTRACT ?
+      ('Contract ' + CURRENT_FIX_CONTRACT + ' · all fixations across its deliveries') :
+      'All fixations across every delivery of this order');
+  }
+  // (v8-Fix) Atalho direto para a ordem em tela — usado pelo botao no
+  // Delivery Schedule, que ja esta no contexto de uma ordem so.
+  function openFixManage() {
+    CURRENT_FIX_CONTRACT = null;
+    renderFixManage();
+    openSheet('fixManageModal');
+  }
+
+  // ============================================================
+  // FIXATIONS — Hub (Toolbox): escolhe a ordem/contrato e a entrega antes
+  // de ver ou adicionar fixacoes. E a tela que decide o CURRENT_FIX_CTX
+  // (por entrega) e o CURRENT_FIX_CONTRACT (para o Gerenciamento).
+  // ============================================================
+  var CURRENT_HUB_ORDER = '__live__';
+  // (v8-Fix) '__live__' e a ordem em tela (monthRows), qualquer outro valor
+  // e um id de PORTFOLIO.pending/positions com entregas em DEMO_CONTRACTS.
+  function fixHubDeliveries(orderVal) {
+    if (orderVal === '__live__') {
+      return monthRows().map(function (row) {
+        return { finalIso: row.querySelector('.m-final').value, qty: parseNum(row.querySelector('.m-qty').value), fixations: fixListFor(row) };
+      });
+    }
+    var c = DEMO_CONTRACTS[orderVal];
+    return c ? c.deliveries : [];
+  }
+  function resolveHubCtx(orderVal, idx) {
+    if (orderVal === '__live__') return { source: 'live', row: monthRows()[idx] };
+    return { source: 'demo', contractId: orderVal, deliveryIdx: idx };
+  }
+  function openFixSheetFor(orderVal, idx) {
+    CURRENT_FIX_CTX = resolveHubCtx(orderVal, idx);
+    renderFixSheet();
+    openSheet('fixModal');
+  }
+  function openAddFixFor(orderVal, idx) {
+    CURRENT_FIX_CTX = resolveHubCtx(orderVal, idx);
+    openAddFix();
+  }
+  function selectHubOrder(orderVal) {
+    CURRENT_HUB_ORDER = orderVal;
+    renderFixHub();
+  }
+  function fixHubOrderCardHtml(val, label, meta, statusHtml) {
+    var sel = (val === CURRENT_HUB_ORDER) ? ' sel' : '';
+    return '<div class="contract-card' + sel + '" onclick="selectHubOrder(\'' + val + '\')">' +
+      '<div class="top"><span class="sym">' + label + '</span>' + statusHtml + '</div>' +
+      '<div class="meta">' + meta + '</div></div>';
+  }
+  function renderFixHub() {
+    var curLabel = editingId || 'This order (unsaved)';
+    var nM = monthRows().length;
+    var curMeta = 'Buy · ' + fmt(getNum('in-qty'), 2) + ' t · ' +
+      document.getElementById('in-grade').value + ' ' + document.getElementById('in-crop').value +
+      ' · ' + nM + (nM === 1 ? ' delivery' : ' deliveries');
+    var cards = fixHubOrderCardHtml('__live__', curLabel, curMeta, '');
+    PORTFOLIO.pending.concat(PORTFOLIO.positions).forEach(function (i) {
+      var statusHtml = '<span class="status ' + i.status + '">' + STATUS_LABEL[i.status] + '</span>';
+      cards += fixHubOrderCardHtml(i.id, i.id, i.meta, statusHtml);
+    });
+    document.getElementById('fixhub-orders').innerHTML = cards;
+
+    var selLabel = (CURRENT_HUB_ORDER === '__live__') ? curLabel : CURRENT_HUB_ORDER;
+    setTxt('fixhub-del-title', 'Deliveries of ' + selLabel);
+    var deliveries = fixHubDeliveries(CURRENT_HUB_ORDER);
+    document.getElementById('fixhub-deliveries').innerHTML = deliveries.length ? deliveries.map(function (d, idx) {
+      var n = d.fixations.length;
+      return '<div class="fixhub-dcard">' +
+        '<div class="top"><span class="sym">Delivery ' + brDate(d.finalIso) + '</span><span class="qty">' + fmt(d.qty, 2) + ' t</span></div>' +
+        '<div class="meta">' + n + (n === 1 ? ' fixation' : ' fixations') + '</div>' +
+        '<div class="actions">' +
+        '<button class="pill-btn" type="button" onclick="openFixSheetFor(\'' + CURRENT_HUB_ORDER + '\', ' + idx + ')">View</button>' +
+        '<button class="pill-btn ghost" type="button" onclick="openAddFixFor(\'' + CURRENT_HUB_ORDER + '\', ' + idx + ')">+ Add</button>' +
+        '</div></div>';
+    }).join('') : '<div class="form-note" style="margin:8px 16px 0;">No deliveries.</div>';
+  }
+  function openFixManageFromHub() {
+    CURRENT_FIX_CONTRACT = (CURRENT_HUB_ORDER === '__live__') ? null : CURRENT_HUB_ORDER;
+    renderFixManage();
+    openSheet('fixManageModal');
+  }
+  function openFixHub() {
+    CURRENT_HUB_ORDER = '__live__';
+    renderFixHub();
+    openSheet('fixContractModal');
+  }
 
   // (v8-H) A lupa das Charges. Mesmo destino a partir do Painel Financeiro e
   // a partir de Logistics & Routes.
@@ -2794,7 +3480,8 @@
           fxBoard: r.querySelector('.m-fxscr').value,
           fx: r.querySelector('.m-fx').value,
           route: r.querySelector('.m-route').value,
-          fixed: fix ? fix.classList.contains('on') : false
+          fixed: fix ? fix.classList.contains('on') : false,
+          fixId: r.dataset.fixId
         };
       })
     };
@@ -2827,7 +3514,7 @@
         finalIso: dd.finalIso, qty: parseNum(dd.qty), ref: dd.ref, adj: parseNum(dd.adj),
         quote: dd.quote === '' ? '' : parseNum(dd.quote), payIso: dd.payIso,
         fxBoard: dd.fxBoard, fx: dd.fx === '' ? '' : parseNum(dd.fx), routeIdx: dd.route,
-        blank: dd.finalIso === ''
+        blank: dd.finalIso === '', fixId: dd.fixId
       });
     }).join('');
     // reaplica o que o usuario havia tocado a mao, e a fixacao
@@ -3186,12 +3873,39 @@
       origin: 'Americana - SP', incoOrigin: 'ExWorks', dest: 'Santos - SP', incoDest: 'FCA', freight: fmt(DEFAULT_FREIGHT, 2)
     });
   }
+  // (v8-Fix) Fixacao "Confirmado" so existe como dado semeado, nunca
+  // alcancada clicando em algo — mesma convencao que PORTFOLIO.positions
+  // ja usa para simular o status "Approved" de uma ordem sem um segundo
+  // usuario/papel de verdade no protótipo.
+  function seedFixation(row, tipo, tipoPreco, qtd, status) {
+    var board = rowBoard(row), fxBoard = row.querySelector('.m-fxscr').value;
+    var c = curveFor(board), fxc = curveFor(fxBoard);
+    var preco = (tipo === 'Fx') ? fxc.fx : (tipo === 'NY') ? c.c : ((c.c / 100) * FACTOR_LB_TON * fxc.fx);
+    fixListFor(row).push({
+      id: nextId('FX'), tipo: tipo, tipoPreco: tipoPreco, dataFixacao: todayIso(),
+      qtd: qtd, preco: preco, precificacao: 'DIF (Cts/Lb)', basisAjuste: 0,
+      qtdLotes: (qtd * FACTOR_LB_TON) / LOT_LB, telaNY: board, telaFx: fxBoard,
+      notionalUsd: qtd * (FACTOR_LB_TON / 100) * c.c, tipoOrdem: 'ATM',
+      statusFixacao: status, statusConfirmacao: 'Não Vinculado'
+    });
+  }
   function seedMonths() {
     var Q = getNum('in-qty');
+    fixSeq = 1; FIXATIONS = {};
     document.getElementById('month-list').innerHTML =
-      monthRowHtml({ finalIso: '2026-07-10', qty: Q / 2, routeIdx: 1 }) +
-      monthRowHtml({ finalIso: '2026-08-10', qty: Q / 2, routeIdx: 1 });
+      monthRowHtml({ finalIso: '2026-07-10', qty: Q / 2, routeIdx: 1, fixId: 1001 }) +
+      monthRowHtml({ finalIso: '2026-08-10', qty: Q / 2, routeIdx: 1, fixId: 1002 });
     refreshRouteSelects();
+    var rows = monthRows();
+    if (rows[0]) {
+      seedFixation(rows[0], 'NY', 'Efetivo', 30.00, 'confirmado');
+      seedFixation(rows[0], 'Fx', 'Efetivo', 20.00, 'pendente');
+      paintFixBadge(rows[0]);
+    }
+    if (rows[1]) {
+      seedFixation(rows[1], 'FlatBRL', 'Efetivo', 40.00, 'nao_solicitado');
+      paintFixBadge(rows[1]);
+    }
   }
   function hideSplash() { var s = document.getElementById('splash'); if (s) s.classList.add('hide'); }
   setTimeout(hideSplash, 1400);
@@ -3202,7 +3916,7 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    var order = ['cancelModal', 'formulaModal', 'chargesModal', 'costsModal', 'toolsModal', 'priceModal', 'productModal', 'commitModal', 'schedModal'];
+    var order = ['cancelModal', 'formulaModal', 'chargesModal', 'costsModal', 'toolsModal', 'priceModal', 'productModal', 'commitModal', 'schedModal', 'addFixModal', 'fixModal', 'fixManageModal', 'fixContractModal'];
     for (var i = 0; i < order.length; i++) {
       if (document.getElementById(order[i]).classList.contains('open')) {
         if (order[i] === 'cancelModal') closeCancel();
