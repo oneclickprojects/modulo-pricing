@@ -1,0 +1,1 @@
+- Removido o número "US$ / t" do canto superior direito da barra de margem — alinhado com a decisão de produto de manter só a margem estimada como número grande na tela
