@@ -1,0 +1,1 @@
+- Botão/gesto voltar do Android agora também desfaz a troca de tela (Purchase, Sales, Portfolio, Curves), não só o fechamento de modais

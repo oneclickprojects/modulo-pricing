@@ -1630,9 +1630,9 @@
     </div>
     <div class="modal-body">
       <div class="tools-grid">
-        <div class="tool-card buy" onclick="closeTools(); clearForm(false); goTo('purchase')"><span class="t">New<br>Purchase Order</span><svg class="icon ic"><use href="#ic-plus-circle"></use></svg></div>
-        <div class="tool-card" onclick="closeTools(); goTo('curves')"><span class="t">Market<br>Curves</span><svg class="icon ic"><use href="#ic-trending-up"></use></svg></div>
-        <div class="tool-card" onclick="closeTools(); goTo('portfolio')"><span class="t">MTM<br>Reports</span><svg class="icon ic"><use href="#ic-bar-chart"></use></svg></div>
+        <div class="tool-card buy" onclick="closeTools(); clearForm(false); goTo('purchase', true)"><span class="t">New<br>Purchase Order</span><svg class="icon ic"><use href="#ic-plus-circle"></use></svg></div>
+        <div class="tool-card" onclick="closeTools(); goTo('curves', true)"><span class="t">Market<br>Curves</span><svg class="icon ic"><use href="#ic-trending-up"></use></svg></div>
+        <div class="tool-card" onclick="closeTools(); goTo('portfolio', true)"><span class="t">MTM<br>Reports</span><svg class="icon ic"><use href="#ic-bar-chart"></use></svg></div>
         <div class="tool-card" onclick="showToast('Exposure view — next phase')"><span class="t">Exposure</span><svg class="icon ic"><use href="#ic-globe"></use></svg></div>
         <div class="tool-card" onclick="showToast('Back office view — next phase')"><span class="t">Back Office<br><small style="color:var(--muted2)">read-only</small></span><svg class="icon ic"><use href="#ic-archive"></use></svg></div>
         <div class="tool-card" onclick="showToast('Route registry — next phase')"><span class="t">Route<br>Registry</span><svg class="icon ic"><use href="#ic-truck"></use></svg></div>
@@ -1975,7 +1975,15 @@
   // Navigation
   // ============================================================
   var VIEW_TITLES = { purchase: 'Purchase Order', portfolio: 'Portfolio', curves: 'Market Curves' };
-  function goTo(view) {
+  var currentView = 'purchase'; // (v8-Back2) espelha a view ativa, para saber o que empilhar
+  function goTo(view, semHistorico) {
+    // (v8-Back2) Troca de tela pelo bottom nav / atalhos da Toolbox tambem
+    // entra no historico do navegador, no mesmo espirito do botao voltar
+    // dos modais: sem isso, trocar de aba e apertar voltar sai do app.
+    if (!semHistorico && view !== currentView) {
+      history.pushState({ oneclickView: view }, '', location.href);
+    }
+    currentView = view;
     document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
     var el = document.getElementById('view-' + view);
     if (el) el.classList.add('active');
@@ -3965,12 +3973,22 @@
     fecharTopoAberto();
   });
 
-  window.addEventListener('popstate', function () {
+  window.addEventListener('popstate', function (ev) {
     if (ignorarProximoPop) { ignorarProximoPop = false; return; }
     fechandoPorPopstate = true;
-    fecharTopoAberto();
+    var fechouSheet = fecharTopoAberto();
+    // (v8-Back2) Nada de modal pra fechar: se a entrada trouxer uma view,
+    // e ela quem o botao voltar deve restaurar.
+    if (!fechouSheet && ev.state && ev.state.oneclickView) {
+      goTo(ev.state.oneclickView, true);
+    }
     fechandoPorPopstate = false;
   });
+
+  // (v8-Back2) Estado inicial do historico: a entrada que ja existe ao abrir
+  // o app passa a carregar a view atual. Sem isso, a primeira troca de tela
+  // nao tem para onde "voltar".
+  history.replaceState({ oneclickView: currentView }, '', location.href);
 
   seedRoutes();
   seedMonths();

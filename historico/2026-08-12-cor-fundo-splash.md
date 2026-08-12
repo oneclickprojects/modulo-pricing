@@ -1,0 +1,1 @@
+- Ajustada a cor de fundo da splash de abertura do app instalado para combinar com o fundo do próprio ícone (antes tinha um contraste visível entre as duas cores)
