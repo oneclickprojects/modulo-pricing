@@ -955,6 +955,62 @@
   }
   .tool-card.wip.washout .t::after{ color:var(--red); }
 
+  /* ============ (v8-C12) PURCHASE V2 — caixa de areia ============
+     Segunda tela pedida na daily de 14/08. A margem estimada continua a
+     mesma, no mesmo lugar, no topo; daqui para baixo e folha em branco:
+     campos vazios para o grupo montar a ordem de preenchimento do zero.
+     O seletor V1/V2 mora na sticky head, entao a troca e sempre um toque. */
+  .vswitch{
+    display:flex; gap:4px; padding:0 12px 9px; align-items:center;
+  }
+  .vswitch button{
+    flex:1; padding:6px 8px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--muted2); font:inherit;
+    font-size:10px; font-weight:800; letter-spacing:.3px;
+  }
+  .vswitch button.active{
+    background:var(--blue); border-color:var(--blue); color:#fff;
+  }
+  .v2-note{
+    margin:12px 12px 10px; padding:9px 12px; background:var(--card); border:1px dashed var(--line);
+    border-radius:10px; font-size:10px; color:var(--muted2); font-weight:600; line-height:1.6;
+  }
+  .v2-note b{ color:var(--muted); font-weight:800; }
+  .v2-tools{ display:flex; gap:6px; padding:0 12px 10px; }
+  .v2-tools button{
+    padding:6px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card2); color:var(--text); font:inherit; font-size:9.5px; font-weight:800;
+  }
+  .v2-tools button.on{ border-color:var(--blue); color:var(--blue); }
+  .v2-grid{
+    display:grid; grid-template-columns:1fr; gap:8px; padding:0 12px 4px;
+  }
+  .v2-grid.cols2{ grid-template-columns:1fr 1fr; }
+  /* Slot vazio: mesma caixa do bloco do V1, so que tracejada e sem conteudo.
+     A borda tracejada avisa que aquilo ainda nao e um campo — e um lugar. */
+  .v2-slot{
+    min-width:0; position:relative; background:var(--card); border:1px dashed var(--line);
+    border-radius:12px; padding:9px 11px 10px; display:flex; flex-direction:column;
+  }
+  .v2-slot .n{
+    position:absolute; top:7px; right:9px; font-size:8.5px; font-weight:800; color:var(--muted2);
+  }
+  .v2-slot .lbl{
+    background:transparent; border:none; font:inherit; color:var(--muted2); padding:0;
+    font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; width:calc(100% - 20px);
+  }
+  .v2-slot .val{
+    background:transparent; border:none; font:inherit; color:var(--text); padding:0;
+    font-size:19px; font-weight:800; margin-top:5px; width:100%;
+  }
+  .v2-slot .lbl:focus, .v2-slot .val:focus{ outline:none; }
+  .v2-slot .lbl::placeholder, .v2-slot .val::placeholder{ color:var(--line); }
+  .v2-slot .rule{ margin-top:6px; height:1px; background:var(--line); }
+  .v2-slot .x{
+    margin-top:7px; align-self:flex-start; background:none; border:none; padding:0;
+    font:inherit; font-size:9px; font-weight:800; color:var(--muted2);
+  }
+
   /* ============ BOTTOM NAV ============ */
   .bottomnav{
     position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:460px;
@@ -1105,6 +1161,13 @@
         </div>
       </div>
     </div>
+
+    <!-- (v8-C12) Troca entre a tela atual e a caixa de areia. Fica na sticky
+         head para ser um toque de qualquer ponto da rolagem. -->
+    <div class="vswitch" id="vswitch">
+      <button type="button" data-pview="purchase" class="active">Purchase</button>
+      <button type="button" data-pview="purchasev2">Purchase V2</button>
+    </div>
   </div>
 
   <!-- ================================================== -->
@@ -1235,6 +1298,29 @@
       </div>
       <div class="swipe-hint">Drag left to cancel · drag right to save or confirm</div>
     </div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- VIEW: PURCHASE V2 — caixa de areia                 -->
+  <!-- (v8-C12) Daily de 14/08: manter o Purchase atual como referencia e   -->
+  <!-- abrir uma segunda tela em branco, no mesmo link, para redesenhar a   -->
+  <!-- ordem de preenchimento. A margem estimada do topo e a mesma e nao    -->
+  <!-- se mexe nela. Daqui para baixo, so lugares vazios.                   -->
+  <!-- ================================================== -->
+  <div class="view" id="view-purchasev2">
+
+    <div class="v2-note">
+      <b>Caixa de areia.</b> A margem estimada no topo fica como esta. O resto da tela
+      esta vazio de proposito: nomeie os campos, escolha a ordem e teste 1 ou 2 colunas.
+      O Purchase ao lado continua intacto como referencia.
+    </div>
+
+    <div class="v2-tools">
+      <button type="button" id="v2-cols" onclick="v2ToggleCols()">2 columns</button>
+      <button type="button" onclick="v2AddSlot()">+ Field</button>
+    </div>
+
+    <div class="v2-grid" id="v2-grid"></div>
   </div>
 
   <!-- ================= MARKET CURVES ================= -->
@@ -1937,12 +2023,16 @@
   // ============================================================
   // Navigation
   // ============================================================
-  var VIEW_TITLES = { purchase: 'Purchase Order', portfolio: 'Portfolio', curves: 'Market Curves' };
+  var VIEW_TITLES = { purchase: 'Purchase Order', purchasev2: 'Purchase Order V2', portfolio: 'Portfolio', curves: 'Market Curves' };
+  // (v8-C12) As duas telas de compra dividem a mesma cabeca: a margem estimada
+  // no topo e a aba Purchase do rodape valem para V1 e V2.
+  function isPurchase(view) { return view === 'purchase' || view === 'purchasev2'; }
   var currentView = 'purchase'; // (v8-Back2) espelha a view ativa, para saber o que empilhar
   function goTo(view, semHistorico) {
     // (v8-Back2) Troca de tela pelo bottom nav / atalhos da Toolbox tambem
     // entra no historico do navegador, no mesmo espirito do botao voltar
     // dos modais: sem isso, trocar de aba e apertar voltar sai do app.
+    // (v8-C12) Vale tambem para o seletor V1/V2: voltar desfaz a troca.
     if (!semHistorico && view !== currentView) {
       history.pushState({ oneclickView: view }, '', location.href);
     }
@@ -1950,14 +2040,22 @@
     document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
     var el = document.getElementById('view-' + view);
     if (el) el.classList.add('active');
-    document.querySelectorAll('#bottomnav button').forEach(function (b) { b.classList.toggle('active', b.dataset.view === view); });
+    document.querySelectorAll('#bottomnav button').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.view === view || (b.dataset.view === 'purchase' && isPurchase(view)));
+    });
+    document.querySelectorAll('#vswitch button').forEach(function (b) { b.classList.toggle('active', b.dataset.pview === view); });
     var t = document.getElementById('topbar-title');
     if (t) t.textContent = (view === 'purchase' && editingId) ? 'Editing order' : (VIEW_TITLES[view] || 'OneClick');
     var bar = document.querySelector('.summary-bar');
-    if (bar) bar.style.display = (view === 'purchase') ? '' : 'none';
+    if (bar) bar.style.display = isPurchase(view) ? '' : 'none';
+    var sw = document.getElementById('vswitch');
+    if (sw) sw.style.display = isPurchase(view) ? '' : 'none';
     window.scrollTo(0, 0);
     if (view === 'purchase') resetSwipe();
   }
+  document.querySelectorAll('#vswitch button').forEach(function (b) {
+    b.addEventListener('click', function () { goTo(b.dataset.pview); });
+  });
   document.querySelectorAll('#bottomnav button').forEach(function (b) {
     b.addEventListener('click', function () {
       // (v8-J33) Mesma mensagem da toolbox: o caminho existe, a tela nao.
@@ -1965,6 +2063,49 @@
       goTo(b.dataset.view);
     });
   });
+  // ============================================================
+  // (v8-C12) Purchase V2 — caixa de areia
+  // Nada de calculo aqui: e uma folha de campos vazios. O nome e o valor de
+  // cada slot sao editaveis na propria tela para o grupo experimentar a ordem
+  // de preenchimento sem passar pelo codigo.
+  // ============================================================
+  var V2_SLOTS = 8;
+  function v2SlotHtml(n) {
+    return '<div class="v2-slot">' +
+      '<span class="n">' + n + '</span>' +
+      '<input class="lbl" placeholder="field name">' +
+      '<input class="val" placeholder="—">' +
+      '<div class="rule"></div>' +
+      '<button type="button" class="x" onclick="v2RemoveSlot(this)">remove</button>' +
+      '</div>';
+  }
+  function v2Render() {
+    var g = document.getElementById('v2-grid');
+    if (!g) return;
+    var html = '';
+    for (var i = 1; i <= V2_SLOTS; i++) html += v2SlotHtml(i);
+    g.innerHTML = html;
+  }
+  function v2Renumber() {
+    var slots = document.querySelectorAll('#v2-grid .v2-slot');
+    Array.prototype.forEach.call(slots, function (s, i) { s.querySelector('.n').textContent = i + 1; });
+  }
+  function v2AddSlot() {
+    var g = document.getElementById('v2-grid');
+    g.insertAdjacentHTML('beforeend', v2SlotHtml(g.children.length + 1));
+  }
+  function v2RemoveSlot(btn) {
+    var slot = btn.closest('.v2-slot');
+    if (slot) { slot.remove(); v2Renumber(); }
+  }
+  function v2ToggleCols() {
+    var g = document.getElementById('v2-grid');
+    var on = g.classList.toggle('cols2');
+    document.getElementById('v2-cols').classList.toggle('on', on);
+    document.getElementById('v2-cols').textContent = on ? '1 column' : '2 columns';
+  }
+  v2Render();
+
   function toggleTheme() {
     var isLight = document.body.classList.toggle('light');
     var sun = document.getElementById('themeIconSun');
