@@ -1,0 +1,3 @@
+- O Purchase V2 deixou de ser uma folha de campos em branco: agora são três etapas — Deal, Logistics e Deliveries — com um card grande por vez, sem rolar a tela
+- Cada etapa mostra embaixo do seu nó o resumo do que já foi preenchido, e tudo que você digita alimenta a mesma margem estimada do Purchase original
+- O botão de avançar não fica mais inerte quando falta campo: ele abre a etapa certa e diz o que está faltando

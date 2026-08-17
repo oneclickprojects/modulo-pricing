@@ -203,6 +203,13 @@
        contraste (5.4:1). O --green claro segue valendo para numero sobre
        fundo escuro, onde ja tem folga de sobra. */
     --green-btn:#237A29;
+    /* (v8-C14) Acento por etapa do V2, em tons frios: nao colidem com o
+       verde/vermelho do resultado nem com o ambar de alerta. */
+    --v2-accent:#4D8DF7; --v2-accent-soft:rgba(77,141,247,.14); --v2-accent-ring:rgba(77,141,247,.10);
+    /* O acento claro e para grafico sobre fundo escuro (no, faixa, icone).
+       Quando vira fundo de botao com texto branco ele precisa escurecer:
+       branco sobre o teal claro da 2.0:1, o que reprova em AA. */
+    --v2-accent-btn:#2E6BD6;
     --red:#F4525E; --red-soft:rgba(244,82,94,.14);
     --blue:#4D8DF7; --blue-soft:rgba(77,141,247,.14);
     --amber:#F0C24B; --amber-soft:rgba(240,194,75,.12);
@@ -991,44 +998,210 @@
   .vswitch button.active{
     background:var(--blue); border-color:var(--blue); color:#fff;
   }
-  .v2-note{
-    margin:12px 12px 10px; padding:9px 12px; background:var(--card); border:1px dashed var(--line);
-    border-radius:10px; font-size:10px; color:var(--muted2); font-weight:600; line-height:1.6;
+  /* ============ (v8-C14) PURCHASE V2 — stepper e card em foco ============
+     A ordem de preenchimento e a mesma de antes (Deal -> Logistics ->
+     Deliveries). O que muda e a divisao: em vez de tres caixas empilhadas,
+     um trilho de tres nos no topo e um unico card grande por vez.
+
+     Duas razoes de produto para o card unico:
+     · A tela deixa de rolar. O trader olha uma decisao de cada vez, com a
+       margem sempre acima — que e o pedido da daily de 24/07.
+     · O trilho carrega o resumo de cada etapa embaixo do no, entao nada do
+       que ja foi preenchido some de vista.
+
+     Acento por etapa em tons frios (azul, teal, violeta). Verde e vermelho
+     continuam reservados para resultado, e ambar para alerta — cor de bloco
+     nao pode competir com o sinal da margem. */
+  .v2-flow{ padding:12px 12px 4px; }
+  /* O acento vive numa variavel trocada pela etapa ativa: um lugar so muda
+     faixa do card, icone, no do trilho, foco do campo e botao de avancar. */
+  .v2-flow[data-step="2"]{ --v2-accent:#3BC9C0; --v2-accent-soft:rgba(59,201,192,.14); --v2-accent-ring:rgba(59,201,192,.10); --v2-accent-btn:#0F766E; }
+  .v2-flow[data-step="3"]{ --v2-accent:#9B8CFA; --v2-accent-soft:rgba(155,140,250,.15); --v2-accent-ring:rgba(155,140,250,.11); --v2-accent-btn:#6D4FE0; }
+  /* Cada no do trilho guarda a cor da sua etapa, entao o tique de
+     "Deal concluido" continua azul mesmo com o card na etapa 2. */
+  .v2-node[data-go="1"]{ --v2-accent:#4D8DF7; --v2-accent-soft:rgba(77,141,247,.14); --v2-accent-ring:rgba(77,141,247,.10); }
+  .v2-node[data-go="2"]{ --v2-accent:#3BC9C0; --v2-accent-soft:rgba(59,201,192,.14); --v2-accent-ring:rgba(59,201,192,.10); }
+  .v2-node[data-go="3"]{ --v2-accent:#9B8CFA; --v2-accent-soft:rgba(155,140,250,.15); --v2-accent-ring:rgba(155,140,250,.11); }
+
+  /* ---------- trilho de etapas ---------- */
+  .v2-rail{ display:flex; align-items:flex-start; padding:2px 2px 4px; }
+  .v2-node{
+    flex:1 1 0; min-width:0; background:none; border:none; padding:0;
+    font-family:inherit; color:inherit; display:flex; flex-direction:column; align-items:center;
+    position:relative;
   }
-  .v2-note b{ color:var(--muted); font-weight:800; }
-  .v2-tools{ display:flex; gap:6px; padding:0 12px 10px; }
-  .v2-tools button{
-    padding:6px 10px; border-radius:8px; border:1px solid var(--line);
-    background:var(--card2); color:var(--text); font:inherit; font-size:9.5px; font-weight:800;
+  /* A linha entre os nos e desenhada pelo proprio no, para acompanhar o
+     espacamento sem numero magico. */
+  .v2-node::before, .v2-node::after{
+    content:''; position:absolute; top:15px; height:2px; background:var(--line); border-radius:2px;
   }
-  .v2-tools button.on{ border-color:var(--blue); color:var(--blue); }
-  .v2-grid{
-    display:grid; grid-template-columns:1fr; gap:8px; padding:0 12px 4px;
+  .v2-node::before{ left:0; right:50%; margin-right:18px; }
+  .v2-node::after{ left:50%; right:0; margin-left:18px; }
+  .v2-node:first-child::before, .v2-node:last-child::after{ display:none; }
+  .v2-node.past::after, .v2-node.past::before, .v2-node.on::before{ background:var(--v2-accent); }
+  .v2-dot{
+    width:32px; height:32px; border-radius:50%; display:grid; place-items:center;
+    background:var(--card); border:2px solid var(--line); color:var(--muted2);
+    font-size:12px; font-weight:800; position:relative; z-index:1;
+    transition:transform .22s cubic-bezier(.2,.8,.3,1), border-color .22s ease, background-color .22s ease, color .22s ease;
   }
-  .v2-grid.cols2{ grid-template-columns:1fr 1fr; }
-  /* Slot vazio: mesma caixa do bloco do V1, so que tracejada e sem conteudo.
-     A borda tracejada avisa que aquilo ainda nao e um campo — e um lugar. */
-  .v2-slot{
-    min-width:0; position:relative; background:var(--card); border:1px dashed var(--line);
-    border-radius:12px; padding:9px 11px 10px; display:flex; flex-direction:column;
+  .v2-dot .icon{ width:14px; height:14px; }
+  .v2-node.on .v2-dot{
+    border-color:var(--v2-accent); color:var(--v2-accent); background:var(--v2-accent-soft);
+    transform:scale(1.12); box-shadow:0 0 0 5px var(--v2-accent-ring);
   }
-  .v2-slot .n{
-    position:absolute; top:7px; right:9px; font-size:8.5px; font-weight:800; color:var(--muted2);
+  .v2-node.past .v2-dot{ border-color:transparent; background:var(--v2-accent); color:#0E1116; }
+  .v2-node .nl{
+    margin-top:7px; font-size:11px; font-weight:800; letter-spacing:.2px; color:var(--muted2);
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .v2-slot .lbl{
-    background:transparent; border:none; font:inherit; color:var(--muted2); padding:0;
-    font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; width:calc(100% - 20px);
+  .v2-node.on .nl{ color:var(--text); }
+  .v2-node .ns{
+    margin-top:2px; font-size:10.5px; font-weight:700; color:var(--muted);
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 2px;
   }
-  .v2-slot .val{
-    background:transparent; border:none; font:inherit; color:var(--text); padding:0;
-    font-size:19px; font-weight:800; margin-top:5px; width:100%;
+
+  /* ---------- card em foco ---------- */
+  .v2-stage{ position:relative; margin-top:12px; }
+  .v2-panel{ display:none; }
+  .v2-panel.active{ display:block; animation:v2in .26s cubic-bezier(.2,.8,.3,1) both; }
+  .v2-stage.back .v2-panel.active{ animation-name:v2inBack; }
+  @keyframes v2in{ from{ opacity:0; transform:translateX(14px); } to{ opacity:1; transform:none; } }
+  @keyframes v2inBack{ from{ opacity:0; transform:translateX(-14px); } to{ opacity:1; transform:none; } }
+
+  .v2-card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:0 0 14px; overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,.28), 0 8px 22px -14px rgba(0,0,0,.7);
   }
-  .v2-slot .lbl:focus, .v2-slot .val:focus{ outline:none; }
-  .v2-slot .lbl::placeholder, .v2-slot .val::placeholder{ color:var(--line); }
-  .v2-slot .rule{ margin-top:6px; height:1px; background:var(--line); }
-  .v2-slot .x{
-    margin-top:7px; align-self:flex-start; background:none; border:none; padding:0;
-    font:inherit; font-size:9px; font-weight:800; color:var(--muted2);
+  body.light .v2-card{ box-shadow:0 1px 2px rgba(16,24,40,.05), 0 10px 24px -16px rgba(16,24,40,.35); }
+  /* Faixa de acento no topo do card: identifica a etapa sem pintar o card
+     inteiro e sem roubar peso do numero da margem. */
+  .v2-card::before{
+    content:''; display:block; height:3px; background:var(--v2-accent); opacity:.9;
+  }
+  .v2-chead{ display:flex; align-items:center; gap:11px; padding:14px 14px 2px; }
+  .v2-ico{
+    flex:0 0 auto; width:38px; height:38px; border-radius:11px; display:grid; place-items:center;
+    background:var(--v2-accent-soft); color:var(--v2-accent);
+  }
+  .v2-ico .icon{ width:17px; height:17px; }
+  .v2-ctitle{ flex:1 1 auto; min-width:0; }
+  .v2-ctitle h3{ font-size:17px; font-weight:800; letter-spacing:-.2px; line-height:1.2; }
+  .v2-ctitle p{ font-size:12px; color:var(--muted); font-weight:600; margin-top:3px; line-height:1.45; }
+  .v2-count{
+    flex:0 0 auto; font-size:11px; font-weight:800; color:var(--muted2);
+    background:var(--card2); border-radius:999px; padding:5px 10px;
+  }
+  .v2-cbody{ padding:0 14px; }
+
+  /* ---------- campos ---------- */
+  .v2-panel .form-field{ margin-top:14px; }
+  .v2-panel .form-field label{ font-size:11.5px; letter-spacing:.4px; margin-bottom:7px; }
+  .v2-panel .form-field input, .v2-panel .form-field select{
+    min-height:46px; font-size:15px; background:var(--card2); border-radius:11px;
+  }
+  .v2-panel .form-field input:focus, .v2-panel .form-field select:focus{
+    border-color:var(--v2-accent); outline:none;
+  }
+  .v2-panel .seg{ background:var(--card2); border-radius:12px; }
+  .v2-panel .seg button{ font-size:12px; padding:12px 0; border-radius:9px; }
+  .v2-panel .seg button.active{ background:var(--card); color:var(--text); }
+  .v2-row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .v2-row2 .form-field{ min-width:0; }
+  .v2-hint{ font-size:11.5px; color:var(--muted2); font-weight:600; line-height:1.55; margin-top:12px; }
+
+  /* Valor grande com stepper: o numero e o protagonista da linha, os -/+
+     tem 46px de alvo e ficam nas pontas, longe um do outro. */
+  .v2-stepwrap{ display:flex; align-items:stretch; gap:8px; }
+  .v2-stepwrap input{ flex:1 1 auto; min-width:0; text-align:center; font-size:22px; font-weight:800; }
+  .v2-stepbtn{
+    flex:0 0 46px; width:46px; min-height:46px; border-radius:11px;
+    border:1px solid var(--line); background:var(--card2); color:var(--text);
+    display:grid; place-items:center;
+  }
+  .v2-stepbtn:active{ background:var(--line); }
+  .v2-stepbtn .icon{ width:15px; height:15px; }
+  .v2-unit{ font-size:11.5px; color:var(--muted2); font-weight:700; margin-top:7px; text-align:center; }
+
+  /* ---------- rota: origem -> destino ---------- */
+  .v2-sub{
+    margin-top:14px; background:var(--card2); border:1px solid var(--line);
+    border-radius:13px; padding:11px 12px 13px; position:relative;
+  }
+  .v2-sub > .tag{
+    font-size:11px; font-weight:800; letter-spacing:.5px; color:var(--muted);
+    text-transform:uppercase; display:block;
+  }
+  .v2-sub .v2-x{
+    position:absolute; top:0; right:0; width:44px; height:44px; border:none; background:none;
+    color:var(--muted2); display:grid; place-items:center;
+  }
+  .v2-sub .v2-x .icon{ width:13px; height:13px; }
+  .v2-sub .form-field input, .v2-sub .form-field select{ background:var(--card); }
+  .v2-leg{ position:relative; padding-left:18px; }
+  .v2-leg::before{
+    content:''; position:absolute; left:4px; top:26px; bottom:26px; width:2px;
+    background:linear-gradient(var(--line), var(--v2-accent)); border-radius:2px;
+  }
+  .v2-end{ position:relative; }
+  .v2-end .dot{
+    position:absolute; left:-17px; top:23px; width:9px; height:9px; border-radius:50%;
+    border:2px solid var(--muted2); background:var(--card2);
+  }
+  .v2-end.to .dot{ border-color:var(--v2-accent); background:var(--v2-accent); }
+
+  /* ---------- entregas ---------- */
+  .v2-derived{
+    margin-top:11px; padding-top:10px; border-top:1px dashed var(--line);
+    font-size:11.5px; color:var(--muted2); font-weight:600; line-height:1.6;
+  }
+  .v2-derived b{ color:var(--muted); font-weight:800; }
+  .v2-alloc{ margin-top:14px; }
+  .v2-alloc .l{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:11.5px; font-weight:700; color:var(--muted2);
+  }
+  .v2-alloc .l b{ color:var(--text); font-weight:800; font-size:14px; }
+  .v2-alloc .bar{ margin-top:7px; height:6px; border-radius:4px; background:var(--card2); overflow:hidden; }
+  .v2-alloc .bar i{
+    display:block; height:100%; background:var(--v2-accent); border-radius:4px;
+    transition:width .28s cubic-bezier(.2,.8,.3,1), background-color .2s ease;
+  }
+  .v2-alloc.full .bar i{ background:var(--green); }
+  .v2-alloc.over .bar i{ background:var(--red); }
+
+  .v2-actions{ display:flex; gap:8px; margin-top:14px; }
+  .v2-actions .pill-btn{
+    min-height:40px; font-size:12px; padding:9px 15px; border-radius:20px;
+    color:var(--v2-accent); background:var(--card2);
+  }
+  .v2-actions .pill-btn.ghost{ color:var(--muted); }
+
+  /* ---------- navegacao do rodape ---------- */
+  .v2-nav{ display:flex; gap:9px; align-items:stretch; margin-top:14px; }
+  .v2-back{
+    flex:0 0 auto; min-width:52px; min-height:52px; border-radius:13px;
+    border:1px solid var(--line); background:var(--card); color:var(--text);
+    display:grid; place-items:center;
+  }
+  .v2-back[disabled]{ opacity:.4; }
+  .v2-back .icon{ width:15px; height:15px; }
+  .v2-fwd{
+    flex:1 1 auto; min-height:52px; border:none; border-radius:13px;
+    background:var(--v2-accent-btn); color:#fff; font-family:inherit; font-size:15px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:background-color .2s ease;
+  }
+  .v2-fwd .icon{ width:15px; height:15px; }
+  .v2-fwd.final{ background:var(--green-btn); }
+  .v2-pend{
+    margin-top:9px; font-size:11.5px; font-weight:700; color:var(--amber);
+    text-align:center; line-height:1.55;
+  }
+  .v2-cancel{
+    display:block; width:100%; min-height:44px; margin-top:2px; background:none; border:none;
+    color:var(--muted2); font-family:inherit; font-size:12.5px; font-weight:700;
   }
 
   /* ============ BOTTOM NAV ============ */
@@ -1324,26 +1497,179 @@
   </div>
 
   <!-- ================================================== -->
-  <!-- VIEW: PURCHASE V2 — caixa de areia                 -->
-  <!-- (v8-C12) Daily de 14/08: manter o Purchase atual como referencia e   -->
-  <!-- abrir uma segunda tela em branco, no mesmo link, para redesenhar a   -->
-  <!-- ordem de preenchimento. A margem estimada do topo e a mesma e nao    -->
-  <!-- se mexe nela. Daqui para baixo, so lugares vazios.                   -->
+  <!-- VIEW: PURCHASE V2 — stepper e card em foco          -->
+  <!-- (v8-C14) Mesma ordem de preenchimento do C13, divisao diferente: um   -->
+  <!-- trilho de tres nos no topo e um unico card grande por vez, em vez de  -->
+  <!-- tres caixas empilhadas. A tela deixa de rolar e o resumo de cada      -->
+  <!-- etapa fica embaixo do no, entao nada preenchido sai de vista.         -->
+  <!-- Tudo escreve nos controles do Purchase original e chama o mesmo       -->
+  <!-- recalc(): a margem do topo e a de verdade e o V1 fica intacto.        -->
   <!-- ================================================== -->
   <div class="view" id="view-purchasev2">
 
-    <div class="v2-note">
-      <b>Caixa de areia.</b> A margem estimada no topo fica como esta. O resto da tela
-      esta vazio de proposito: nomeie os campos, escolha a ordem e teste 1 ou 2 colunas.
-      O Purchase ao lado continua intacto como referencia.
-    </div>
+    <div class="v2-flow" id="v2-flow" data-step="1">
 
-    <div class="v2-tools">
-      <button type="button" id="v2-cols" onclick="v2ToggleCols()">2 columns</button>
-      <button type="button" onclick="v2AddSlot()">+ Field</button>
-    </div>
+      <!-- ---------- trilho ---------- -->
+      <div class="v2-rail" id="v2-rail">
+        <button type="button" class="v2-node on" data-go="1" onclick="v2GoStep(1)">
+          <span class="v2-dot" id="v2-dot-1">1</span>
+          <span class="nl">Deal</span>
+          <span class="ns" id="v2-ns-1">—</span>
+        </button>
+        <button type="button" class="v2-node" data-go="2" onclick="v2GoStep(2)">
+          <span class="v2-dot" id="v2-dot-2">2</span>
+          <span class="nl">Logistics</span>
+          <span class="ns" id="v2-ns-2">—</span>
+        </button>
+        <button type="button" class="v2-node" data-go="3" onclick="v2GoStep(3)">
+          <span class="v2-dot" id="v2-dot-3">3</span>
+          <span class="nl">Deliveries</span>
+          <span class="ns" id="v2-ns-3">—</span>
+        </button>
+      </div>
 
-    <div class="v2-grid" id="v2-grid"></div>
+      <div class="v2-stage" id="v2-stage">
+
+        <!-- ---------- 1 · DEAL ---------- -->
+        <!-- Quantidade e unidade antes do preco: sem a unidade, o numero
+             digitado no preco nao quer dizer nada. Comissao depois do
+             produto, porque e o campo que menos muda (default 0). -->
+        <div class="v2-panel active" id="v2-panel-1">
+          <div class="v2-card">
+            <div class="v2-chead">
+              <span class="v2-ico"><svg class="icon"><use href="#ic-tag"></use></svg></span>
+              <span class="v2-ctitle"><h3>Deal</h3><p>What is being bought, how much and at what price</p></span>
+              <span class="v2-count">1 / 3</span>
+            </div>
+            <div class="v2-cbody">
+
+              <div class="form-field">
+                <label for="v2-qty">Quantity (t) <span class="req">*</span></label>
+                <div class="v2-stepwrap">
+                  <button type="button" class="v2-stepbtn" onclick="v2Bump('qty',-10)" aria-label="Decrease quantity by 10 t"><svg class="icon"><use href="#ic-minus"></use></svg></button>
+                  <input id="v2-qty" inputmode="decimal" placeholder="0.00" oninput="v2SetQty(this.value)">
+                  <button type="button" class="v2-stepbtn" onclick="v2Bump('qty',10)" aria-label="Increase quantity by 10 t"><svg class="icon"><use href="#ic-plus"></use></svg></button>
+                </div>
+                <div class="v2-unit" id="v2-qty-hint">—</div>
+              </div>
+
+              <div class="form-field">
+                <label>Quotation unit <span class="req">*</span></label>
+                <div class="seg" id="v2-unitSeg">
+                  <button type="button" data-unit="USD_TON" onclick="v2SetUnit('USD_TON')">USD/t</button>
+                  <button type="button" data-unit="USD_LB" onclick="v2SetUnit('USD_LB')">USD/lb</button>
+                  <button type="button" data-unit="BRL_LB" onclick="v2SetUnit('BRL_LB')">BRL/lb</button>
+                  <button type="button" data-unit="BRL_TON" onclick="v2SetUnit('BRL_TON')">BRL/t</button>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="v2-price">Price <span class="req">*</span></label>
+                <div class="v2-stepwrap">
+                  <button type="button" class="v2-stepbtn" onclick="v2Bump('price',-0.05)" aria-label="Decrease price"><svg class="icon"><use href="#ic-minus"></use></svg></button>
+                  <input id="v2-price" inputmode="decimal" placeholder="0.00" oninput="v2SetPrice(this.value)">
+                  <button type="button" class="v2-stepbtn" onclick="v2Bump('price',0.05)" aria-label="Increase price"><svg class="icon"><use href="#ic-plus"></use></svg></button>
+                </div>
+                <div class="v2-unit" id="v2-price-hint">—</div>
+              </div>
+
+              <div class="form-field">
+                <label for="v2-grade">Grade <span class="req">*</span></label>
+                <select id="v2-grade" onchange="v2SetProduct()"></select>
+              </div>
+              <div class="v2-row2">
+                <div class="form-field">
+                  <label for="v2-crop">Crop <span class="req">*</span></label>
+                  <select id="v2-crop" onchange="v2SetProduct()"></select>
+                </div>
+                <div class="form-field">
+                  <label for="v2-market">Market <span class="req">*</span></label>
+                  <select id="v2-market" onchange="v2SetProduct()"></select>
+                </div>
+              </div>
+
+              <div class="v2-row2">
+                <div class="form-field">
+                  <label for="v2-comm">Commission</label>
+                  <input id="v2-comm" inputmode="decimal" placeholder="0.00" oninput="v2SetComm(this.value)">
+                </div>
+                <div class="form-field">
+                  <label for="v2-pay">Payment terms (days) <span class="req">*</span></label>
+                  <input id="v2-pay" inputmode="numeric" placeholder="30" oninput="v2SetPayterms(this.value)">
+                </div>
+              </div>
+              <div class="form-field">
+                <label>Commission type</label>
+                <div class="seg" id="v2-commSeg">
+                  <button type="button" data-ctype="PCT" onclick="v2SetCommType('PCT')">%</button>
+                  <button type="button" data-ctype="CTS_LB" onclick="v2SetCommType('CTS_LB')">c/lb</button>
+                  <button type="button" data-ctype="BRL_TON" onclick="v2SetCommType('BRL_TON')">R$/t</button>
+                  <button type="button" data-ctype="USD_TON" onclick="v2SetCommType('USD_TON')">US$/t</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ---------- 2 · LOGISTICS ---------- -->
+        <!-- Incoterm nao e do cabecalho da ordem: existe por perna de rota,
+             e e ali que ele muda o custo. -->
+        <div class="v2-panel" id="v2-panel-2">
+          <div class="v2-card">
+            <div class="v2-chead">
+              <span class="v2-ico"><svg class="icon"><use href="#ic-truck"></use></svg></span>
+              <span class="v2-ctitle"><h3>Logistics</h3><p>Where the cotton comes from, where it goes and what the leg costs</p></span>
+              <span class="v2-count">2 / 3</span>
+            </div>
+            <div class="v2-cbody">
+              <div id="v2-routes"></div>
+              <div class="v2-actions">
+                <button type="button" class="pill-btn" onclick="v2AddRoute()">+ Route</button>
+              </div>
+              <div class="v2-hint">Charges are not typed in: they come from the registry for the destination of each route.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---------- 3 · DELIVERIES ---------- -->
+        <!-- Duas coisas por entrega: mes e quantidade. Tela, cotacao, FX e
+             data de pagamento sao derivados e ficam na linha de leitura. -->
+        <div class="v2-panel" id="v2-panel-3">
+          <div class="v2-card">
+            <div class="v2-chead">
+              <span class="v2-ico"><svg class="icon"><use href="#ic-calendar"></use></svg></span>
+              <span class="v2-ctitle"><h3>Deliveries</h3><p>Split the volume across months — the rest fills in by itself</p></span>
+              <span class="v2-count">3 / 3</span>
+            </div>
+            <div class="v2-cbody">
+              <div id="v2-months"></div>
+              <div class="v2-actions">
+                <button type="button" class="pill-btn" onclick="v2AddMonth()">+ Month</button>
+                <button type="button" class="pill-btn ghost" onclick="v2EvenSplit()">Even split</button>
+              </div>
+              <div class="v2-alloc" id="v2-alloc">
+                <div class="l"><span>Allocated</span><span><b>0.00</b> / 0.00 t</span></div>
+                <div class="bar"><i id="v2-alloc-bar" style="width:0"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="v2-nav">
+        <button type="button" class="v2-back" id="v2-back" onclick="v2GoStep(-1)" aria-label="Previous step" disabled>
+          <svg class="icon"><use href="#ic-chevron-left"></use></svg>
+        </button>
+        <button type="button" class="v2-fwd" id="v2-fwd" onclick="v2Forward()">
+          <span id="v2-fwd-l">Continue</span> <svg class="icon"><use href="#ic-chevron-right"></use></svg>
+        </button>
+      </div>
+      <div class="v2-pend" id="v2-pend" hidden></div>
+      <button type="button" class="v2-cancel" onclick="cancelOrder()">Cancel order</button>
+
+    </div>
   </div>
 
   <!-- ================= MARKET CURVES ================= -->
@@ -2075,6 +2401,9 @@
     if (sw) sw.style.display = isPurchase(view) ? '' : 'none';
     window.scrollTo(0, 0);
     if (view === 'purchase') resetSwipe();
+    // (v8-C13) O V2 le o estado do V1 toda vez que abre: os dois lados sao a
+    // mesma ordem, entao trocar de aba nunca pode perder o que foi digitado.
+    if (view === 'purchasev2' && typeof v2Sync === 'function') v2Sync();
   }
   document.querySelectorAll('#vswitch button').forEach(function (b) {
     b.addEventListener('click', function () { goTo(b.dataset.pview); });
@@ -2087,47 +2416,361 @@
     });
   });
   // ============================================================
-  // (v8-C12) Purchase V2 — caixa de areia
-  // Nada de calculo aqui: e uma folha de campos vazios. O nome e o valor de
-  // cada slot sao editaveis na propria tela para o grupo experimentar a ordem
-  // de preenchimento sem passar pelo codigo.
+  // (v8-C14) Purchase V2 — stepper e card em foco
+  //
+  // A ordem de preenchimento e a mesma:
+  //   1 Deal        o que e quanto  — qty, unidade, preco, produto, comissao
+  //   2 Logistics   por onde        — origem, incoterm, destino, frete
+  //   3 Deliveries  quando          — mes e quantidade de cada entrega
+  //
+  // O que mudou foi a divisao: um card por vez, com o trilho no topo levando
+  // o resumo de cada etapa. Nenhuma conta mora aqui — cada campo escreve no
+  // controle equivalente do Purchase original e dispara o evento que ele ja
+  // escuta, entao quem calcula continua sendo o recalc() de sempre. Duas
+  // consequencias uteis: a margem do topo e a de verdade, e trocar de aba nao
+  // perde nada.
+  //
+  // Diferenca de conteudo para o V1, e o motivo:
+  //   · Incoterm sai do cabecalho e vai para cada perna de rota, que e onde
+  //     ele muda o custo.
+  //   · A entrega pede mes, nao data. Tela, cotacao, FX e data de pagamento
+  //     sao derivados — descem para uma linha de leitura embaixo do campo.
   // ============================================================
-  var V2_SLOTS = 8;
-  function v2SlotHtml(n) {
-    return '<div class="v2-slot">' +
-      '<span class="n">' + n + '</span>' +
-      '<input class="lbl" placeholder="field name">' +
-      '<input class="val" placeholder="—">' +
-      '<div class="rule"></div>' +
-      '<button type="button" class="x" onclick="v2RemoveSlot(this)">remove</button>' +
+  var V2_STEP = 1;
+
+  function v2El(id) { return document.getElementById(id); }
+  function v2Fire(el, type) { if (el) el.dispatchEvent(new Event(type, { bubbles: true })); }
+
+  // ---------- navegacao entre etapas ----------
+  // v2GoStep(-1) volta uma; v2GoStep(n) vai direto, inclusive pelo trilho.
+  function v2GoStep(n) {
+    var target = (n === -1) ? Math.max(1, V2_STEP - 1) : Math.min(3, Math.max(1, n));
+    if (target === V2_STEP) return;
+    var stage = v2El('v2-stage');
+    stage.classList.toggle('back', target < V2_STEP);
+    V2_STEP = target;
+    [1, 2, 3].forEach(function (i) {
+      v2El('v2-panel-' + i).classList.toggle('active', i === V2_STEP);
+    });
+    v2El('v2-flow').dataset.step = V2_STEP;
+    v2Refresh();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  // O botao de avancar tem um so rotulo por etapa: seguir ou confirmar.
+  function v2Forward() {
+    if (V2_STEP < 3) { v2GoStep(V2_STEP + 1); return; }
+    var pend = v2Pending();
+    if (pend.length) {
+      // (v8-C14) Nada de botao que nao faz nada: falta campo, o fluxo abre a
+      // etapa certa e diz o que falta.
+      var step = (pend[0] === 'freight') ? 2 : (pend[0] === 'deliveries' ? 3 : 1);
+      if (V2_STEP !== step) v2GoStep(step);
+      showToast('Still missing: ' + pend.join(', '));
+      return;
+    }
+    openCommit();
+  }
+
+  // ---------- 1 · Deal ----------
+  function v2SetQty(v) {
+    var el = v2El('in-qty'); if (!el) return;
+    el.value = v; v2Fire(el, 'input'); v2Refresh();
+  }
+  function v2SetPrice(v) {
+    var el = v2El('in-price'); if (!el) return;
+    el.value = v; v2Fire(el, 'input'); v2Refresh();
+  }
+  function v2SetPayterms(v) {
+    var el = v2El('in-payterms'); if (!el) return;
+    el.value = v; v2Fire(el, 'input'); v2Refresh();
+  }
+  function v2SetComm(v) {
+    var el = v2El('in-commission'); if (!el) return;
+    el.value = v; v2Fire(el, 'input'); v2Refresh();
+  }
+  function v2Bump(which, delta) {
+    // Reaproveita o stepper do V1 para nao ter duas regras de arredondamento.
+    if (which === 'qty') stepQty(delta); else stepPrice(delta);
+    v2El('v2-qty').value = v2El('in-qty').value;
+    v2El('v2-price').value = v2El('in-price').value;
+    v2Refresh();
+  }
+  function v2SetUnit(u) {
+    var b = document.querySelector('#unitSeg button[data-unit="' + u + '"]');
+    if (b) b.click();          // o proprio V1 marca o ativo e chama recalc
+    document.querySelectorAll('#v2-unitSeg button').forEach(function (x) {
+      x.classList.toggle('active', x.dataset.unit === u);
+    });
+    v2Refresh();
+  }
+  function v2SetCommType(t) {
+    var b = document.querySelector('#commSeg button[data-ctype="' + t + '"]');
+    if (b) b.click();
+    document.querySelectorAll('#v2-commSeg button').forEach(function (x) {
+      x.classList.toggle('active', x.dataset.ctype === t);
+    });
+    v2Refresh();
+  }
+  function v2SetProduct() {
+    [['v2-grade', 'in-grade'], ['v2-crop', 'in-crop'], ['v2-market', 'in-market']].forEach(function (p) {
+      var from = v2El(p[0]), to = v2El(p[1]);
+      if (from && to && from.value !== to.value) { to.value = from.value; v2Fire(to, 'change'); }
+    });
+    v2Refresh();
+  }
+
+  // ---------- 2 · Logistics ----------
+  function v2RouteCardHtml(idx, r) {
+    var sel = function (cls, list, cur, lab) {
+      return '<div class="form-field"><label>' + lab + '</label><select data-v2rf="' + cls + '">' +
+        optHtml(list, cur) + '</select></div>';
+    };
+    return '<div class="v2-sub" data-v2route="' + idx + '">' +
+      '<span class="tag">Route R' + idx + '</span>' +
+      '<button type="button" class="v2-x" onclick="v2RemoveRoute(' + idx + ')" aria-label="Remove route R' + idx + '">' +
+      '<svg class="icon"><use href="#ic-x"></use></svg></button>' +
+      '<div class="v2-leg">' +
+      '<div class="v2-end from"><span class="dot"></span>' +
+      sel('origin', ORIGINS, r.origin, 'Origin') +
+      sel('incoOrigin', INCOTERMS, r.incoOrigin, 'Incoterm at origin') + '</div>' +
+      '<div class="v2-end to"><span class="dot"></span>' +
+      sel('dest', DESTINATIONS, r.dest, 'Destination') +
+      sel('incoDest', INCOTERMS, r.incoDest, 'Incoterm at destination') + '</div>' +
+      '</div>' +
+      '<div class="form-field"><label>Freight (R$ / t)</label>' +
+      '<input data-v2rf="freight" inputmode="decimal" placeholder="0.00" value="' + r.freight + '"></div>' +
       '</div>';
   }
-  function v2Render() {
-    var g = document.getElementById('v2-grid');
-    if (!g) return;
-    var html = '';
-    for (var i = 1; i <= V2_SLOTS; i++) html += v2SlotHtml(i);
-    g.innerHTML = html;
+  function v2RenderRoutes() {
+    var box = v2El('v2-routes'); if (!box) return;
+    box.innerHTML = Array.prototype.map.call(document.querySelectorAll('#route-list .rt'), function (rt) {
+      var g = function (f) { var e = rt.querySelector('[data-rf="' + f + '"]'); return e ? e.value : ''; };
+      return v2RouteCardHtml(rt.dataset.route, {
+        origin: g('origin'), incoOrigin: g('incoOrigin'), dest: g('dest'),
+        incoDest: g('incoDest'), freight: g('freight')
+      });
+    }).join('');
   }
-  function v2Renumber() {
-    var slots = document.querySelectorAll('#v2-grid .v2-slot');
-    Array.prototype.forEach.call(slots, function (s, i) { s.querySelector('.n').textContent = i + 1; });
+  function v2RouteWrite(e) {
+    var card = e.target.closest('[data-v2route]'); if (!card) return;
+    var f = e.target.dataset.v2rf; if (!f) return;
+    var src = document.querySelector('#route-list .rt[data-route="' + card.dataset.v2route + '"]');
+    if (!src) return;
+    var dst = src.querySelector('[data-rf="' + f + '"]');
+    if (!dst) return;
+    dst.value = e.target.value;
+    v2Fire(dst, f === 'freight' ? 'input' : 'change');
+    v2Refresh();
   }
-  function v2AddSlot() {
-    var g = document.getElementById('v2-grid');
-    g.insertAdjacentHTML('beforeend', v2SlotHtml(g.children.length + 1));
+  function v2AddRoute() { addRoute(); v2RenderRoutes(); v2Refresh(); }
+  function v2RemoveRoute(idx) {
+    var src = document.querySelector('#route-list .rt[data-route="' + idx + '"]');
+    if (src) removeRoute(src.querySelector('.rt-x'));
+    v2RenderRoutes(); v2RenderMonths(); v2Refresh();
   }
-  function v2RemoveSlot(btn) {
-    var slot = btn.closest('.v2-slot');
-    if (slot) { slot.remove(); v2Renumber(); }
+
+  // ---------- 3 · Deliveries ----------
+  // A entrega e por mes. O dia 10 e o mesmo padrao que o V1 ja usa — manter
+  // isso faz o mes de referencia e a data de pagamento cairem no mesmo lugar
+  // nas duas telas.
+  function v2MonthOptions(curIso) {
+    var cur = (curIso || '').slice(0, 7);
+    var out = [], base = new Date(2026, 0, 1);
+    for (var i = 0; i < 24; i++) {
+      var d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+      var v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      out.push('<option value="' + v + '"' + (v === cur ? ' selected' : '') +
+        '>' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear() + '</option>');
+    }
+    if (!cur) out.unshift('<option value="" selected>Select</option>');
+    return out.join('');
   }
-  function v2ToggleCols() {
-    var g = document.getElementById('v2-grid');
-    var on = g.classList.toggle('cols2');
-    document.getElementById('v2-cols').classList.toggle('on', on);
-    document.getElementById('v2-cols').textContent = on ? '1 column' : '2 columns';
+  function v2RenderMonths() {
+    var box = v2El('v2-months'); if (!box) return;
+    box.innerHTML = monthRows().map(function (r, i) {
+      var iso = r.querySelector('.m-final').value;
+      var qty = r.querySelector('.m-qty').value;
+      var ref = r.querySelector('.m-ref').value;
+      var scr = r.querySelector('.m-board').textContent;
+      var quote = r.querySelector('.m-quote').value;
+      var fx = r.querySelector('.m-fx').value;
+      var pay = r.querySelector('.m-pay').value;
+      var derived = iso
+        ? ('Ref <b>' + ref + '</b> · screen <b>' + scr + '</b> · quote <b>' + (quote || DASH) +
+           '</b> c/lb · FX <b>' + (fx || DASH) + '</b> · pays ' + (pay ? fmtShortDate(payDateFromIso(pay)) : DASH))
+        : 'Pick the month and the rest fills in by itself.';
+      return '<div class="v2-sub" data-v2month="' + i + '">' +
+        '<span class="tag">Delivery ' + (i + 1) + '</span>' +
+        '<button type="button" class="v2-x" onclick="v2RemoveMonth(' + i + ')" aria-label="Remove delivery ' + (i + 1) + '">' +
+        '<svg class="icon"><use href="#ic-x"></use></svg></button>' +
+        '<div class="v2-row2">' +
+        '<div class="form-field"><label>Final delivery <span class="req">*</span></label>' +
+        '<select data-v2mf="month">' + v2MonthOptions(iso) + '</select></div>' +
+        '<div class="form-field"><label>Quantity (t) <span class="req">*</span></label>' +
+        '<input data-v2mf="qty" inputmode="decimal" placeholder="0.00" value="' + qty + '"></div>' +
+        '</div>' +
+        '<div class="v2-derived">' + derived + '</div>' +
+        '</div>';
+    }).join('');
   }
-  v2Render();
+  function v2MonthWrite(e) {
+    var card = e.target.closest('[data-v2month]'); if (!card) return;
+    var f = e.target.dataset.v2mf; if (!f) return;
+    var row = monthRows()[+card.dataset.v2month]; if (!row) return;
+    if (f === 'month') {
+      var v = e.target.value;
+      var fin = row.querySelector('.m-final');
+      fin.value = v ? (v + '-10') : '';
+      // Mes novo: o mes de referencia e a data de pagamento voltam a seguir a
+      // entrega, mesmo que alguem os tenha mexido a mao antes.
+      var ref = row.querySelector('.m-ref'); if (ref) delete ref.dataset.touched;
+      var pay = row.querySelector('.m-pay'); if (pay) delete pay.dataset.touched;
+      v2Fire(fin, 'change');
+      v2RenderMonths();
+    } else {
+      var q = row.querySelector('.m-qty');
+      q.value = e.target.value;
+      v2Fire(q, 'input');
+    }
+    v2Refresh();
+  }
+  function v2AddMonth() { addMonth(); recalc(); v2RenderMonths(); v2Refresh(); }
+  function v2RemoveMonth(i) {
+    var row = monthRows()[i];
+    if (row) removeMonth(row.querySelector('.m-x'));
+    recalc(); v2RenderMonths(); v2Refresh();
+  }
+  function v2EvenSplit() { distributeEvenly(); v2RenderMonths(); v2Refresh(); }
+
+  // ---------- estado do trilho, alocacao e botao ----------
+  function v2Pending() {
+    var out = [];
+    if (!(getNum('in-qty') > 0)) out.push('quantity');
+    if (!String(v2El('in-price').value).trim()) out.push('price');
+    if (!(getNum('in-payterms') > 0)) out.push('payment terms');
+    if (v2El('in-grade').selectedIndex === 0) out.push('grade');
+    if (v2El('in-market').selectedIndex === 0) out.push('market');
+    var noFreight = !Array.prototype.some.call(document.querySelectorAll('#route-list .rt'), function (rt) {
+      return parseNum(rt.querySelector('[data-rf="freight"]').value) > 0;
+    });
+    if (noFreight) out.push('freight');
+    var rows = monthRows();
+    if (!rows.length || !rows.every(function (r) {
+      return r.querySelector('.m-final').value && parseNum(r.querySelector('.m-qty').value) > 0;
+    })) out.push('deliveries');
+    return out;
+  }
+  function v2Refresh() {
+    if (!v2El('v2-qty')) return;
+    var unit = UNIT_LABELS[currentUnit] || currentUnit;
+    var qty = getNum('in-qty');
+    var price = String(v2El('in-price').value).trim();
+    var grade = v2El('in-grade');
+    var doneMap = {};
+
+    // etapa 1 — resumo no trilho
+    var s1 = [];
+    if (qty > 0) s1.push(fmt(qty, 2) + ' t');
+    if (price) s1.push(price + ' ' + unit);
+    setTxt('v2-ns-1', s1.length ? s1.join(' · ') : DASH);
+    doneMap[1] = qty > 0 && !!price && grade.selectedIndex !== 0;
+    setTxt('v2-qty-hint', qty > 0 ? (fmt(qty, 2) + ' t in this order') : DASH);
+    setTxt('v2-price-hint', price ? (unit + ' · ' + fmt(getNum('in-payterms'), 0) + ' days') : DASH);
+
+    // etapa 2
+    var rts = document.querySelectorAll('#route-list .rt');
+    var s2 = DASH;
+    if (rts.length === 1) {
+      var r0 = rts[0];
+      var fr = parseNum(r0.querySelector('[data-rf="freight"]').value);
+      s2 = String(r0.querySelector('[data-rf="dest"]').value).split(' - ')[0] +
+        (fr > 0 ? (' · R$ ' + fmt(fr, 0)) : '');
+    } else if (rts.length > 1) {
+      s2 = rts.length + ' routes';
+    }
+    setTxt('v2-ns-2', s2);
+    doneMap[2] = Array.prototype.some.call(rts, function (rt) {
+      return parseNum(rt.querySelector('[data-rf="freight"]').value) > 0;
+    });
+
+    // etapa 3 + barra de alocacao
+    var rows = monthRows();
+    var alloc = rows.reduce(function (a, r) { return a + parseNum(r.querySelector('.m-qty').value); }, 0);
+    var complete = rows.length > 0 && rows.every(function (r) {
+      return r.querySelector('.m-final').value && parseNum(r.querySelector('.m-qty').value) > 0;
+    });
+    setTxt('v2-ns-3', rows.length ? (rows.length + (rows.length > 1 ? ' months' : ' month')) : DASH);
+    doneMap[3] = complete && qty > 0 && Math.abs(alloc - qty) < 0.005;
+
+    var allocEl = v2El('v2-alloc');
+    allocEl.querySelector('.l span:last-child').innerHTML =
+      '<b>' + fmt(alloc, 2) + '</b> / ' + fmt(qty, 2) + ' t';
+    v2El('v2-alloc-bar').style.width = (qty > 0 ? Math.min(100, (alloc / qty) * 100) : 0) + '%';
+    allocEl.classList.toggle('full', qty > 0 && Math.abs(alloc - qty) < 0.005);
+    allocEl.classList.toggle('over', qty > 0 && alloc - qty > 0.005);
+
+    // trilho: etapa atual, etapas ja visitadas e o tique de concluida
+    [1, 2, 3].forEach(function (i) {
+      var node = document.querySelector('.v2-node[data-go="' + i + '"]');
+      var dot = v2El('v2-dot-' + i);
+      node.classList.toggle('on', i === V2_STEP);
+      node.classList.toggle('past', doneMap[i] && i !== V2_STEP);
+      dot.innerHTML = (doneMap[i] && i !== V2_STEP)
+        ? '<svg class="icon"><use href="#ic-check"></use></svg>' : String(i);
+    });
+
+    // rodape
+    v2El('v2-back').disabled = (V2_STEP === 1);
+    var fwd = v2El('v2-fwd');
+    fwd.classList.toggle('final', V2_STEP === 3);
+    setTxt('v2-fwd-l', V2_STEP === 3 ? 'Review and confirm' : 'Continue');
+
+    // O botao nunca fica desabilitado em silencio: quando falta algo, ele diz
+    // o que falta em vez de so nao responder.
+    var pend = v2Pending();
+    var pendEl = v2El('v2-pend');
+    if (V2_STEP === 3 && pend.length) {
+      pendEl.hidden = false;
+      pendEl.textContent = 'Still missing: ' + pend.join(', ') + '.';
+    } else {
+      pendEl.hidden = true;
+    }
+  }
+
+  // Puxa o estado do Purchase original para dentro do V2. Chamado toda vez
+  // que a aba V2 abre, entao o que foi mexido no V1 chega aqui inteiro.
+  function v2Sync() {
+    if (!v2El('v2-qty')) return;
+    v2El('v2-qty').value = v2El('in-qty').value;
+    v2El('v2-price').value = v2El('in-price').value;
+    v2El('v2-pay').value = v2El('in-payterms').value;
+    v2El('v2-comm').value = v2El('in-commission').value;
+    [['v2-grade', 'in-grade'], ['v2-crop', 'in-crop'], ['v2-market', 'in-market']].forEach(function (p) {
+      var to = v2El(p[0]), from = v2El(p[1]);
+      to.innerHTML = from.innerHTML;
+      to.value = from.value;
+    });
+    document.querySelectorAll('#v2-unitSeg button').forEach(function (b) {
+      b.classList.toggle('active', unitChosen && b.dataset.unit === currentUnit);
+    });
+    document.querySelectorAll('#v2-commSeg button').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.ctype === currentCommType);
+    });
+    v2RenderRoutes();
+    v2RenderMonths();
+    v2Refresh();
+  }
+
+  // Um listener por bloco, delegado — as rotas e entregas sao redesenhadas o
+  // tempo todo e nao daria para religar handler por handler.
+  ['v2-routes', 'v2-months'].forEach(function (id) {
+    var box = v2El(id); if (!box) return;
+    var write = (id === 'v2-routes') ? v2RouteWrite : v2MonthWrite;
+    box.addEventListener('change', write);
+    box.addEventListener('input', function (e) {
+      if (e.target.tagName === 'INPUT') write(e);
+    });
+  });
 
   function toggleTheme() {
     var isLight = document.body.classList.toggle('light');
