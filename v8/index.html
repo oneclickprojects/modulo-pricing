@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<!-- (v8-C13) Sem maximum-scale: travar o zoom impede o trader de ampliar a
+     grade de entregas, que tem rotulo em 7.5px. O pinch volta a funcionar. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>OneClick — Front Office · Purchase Order · v8</title>
 
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAkFBMVEUaI0b8/PweNkktiFgsOFQmZVLn6OwpdVQhR01DS2ckWU+Tl6ilqbdRWHLT1dskLE5zeY65vMfFyNAvk1pla4Pa2+E9RWJ9g5aGip2Kj6FcY3xhZ38AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABVm8/IAAAAMHRSTlP/////////////////////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAABshdbIAAAAzklEQVR42tVTWxKDIAxkJQQR8a193f+eDVbr6ED/G8aI7s6ySQal/jNKU/zAJFVjnmDGUgg6Tyi0yRNMJckKmCNoHeWtgEVOPjJ+RaHt+iaiBBhlSRI9GoD755VgtVn1F4GHfgb8tUNWj1IhNagXpdqJcb9qUJTwqD9fjuESNol593fbqYdNecLxl9CcPepYY3ec3M58arOVpdSEx5fAnPDg0B/bIdXMBmHb1ehShBdmtxUxtMl5eLAPYerBLjOxjhFjcNmZUudrH/7snr0BqKYFxfycExYAAAAASUVORK5CYII=">
@@ -197,6 +199,10 @@
     --bg:#0E1116; --bg2:#151A21; --card:#1A2029; --card2:#20272F; --line:#2A323C;
     --text:#E8ECF1; --muted:#8A94A3; --muted2:#5D6673;
     --green:#3CC044; --green-dark:#2a8c31; --green-soft:rgba(60,192,68,.14);
+    /* Verde de botao: o mesmo tom, escurecido ate o texto branco passar em
+       contraste (5.4:1). O --green claro segue valendo para numero sobre
+       fundo escuro, onde ja tem folga de sobra. */
+    --green-btn:#237A29;
     --red:#F4525E; --red-soft:rgba(244,82,94,.14);
     --blue:#4D8DF7; --blue-soft:rgba(77,141,247,.14);
     --amber:#F0C24B; --amber-soft:rgba(240,194,75,.12);
@@ -249,6 +255,20 @@
   }
   details > summary{ cursor:pointer; list-style:none; }
   details > summary::-webkit-details-marker{ display:none; }
+
+  /* (v8-C13) Alvo de toque sem mexer no desenho. O botao continua do mesmo
+     tamanho na tela; o que cresce e a area que responde ao dedo, ate os 44px
+     que iOS e Android pedem. Sem isso, o "i" da margem tem 13px e os
+     steppers de quantidade e preco tem 26px — errar o alvo ali mexe no preco
+     de uma ordem sem o trader perceber. */
+  .hero-i, .tb-step button, .icon-btn{ position:relative; }
+  .hero-i::after, .tb-step button::after, .icon-btn::after{
+    content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:44px; height:44px; border-radius:50%;
+  }
+  /* (v8-C13) Foco de teclado visivel. Nao existia nenhuma regra de foco no
+     arquivo, entao quem navega por Tab no desktop ficava sem saber onde esta. */
+  :focus-visible{ outline:2px solid var(--blue); outline-offset:2px; border-radius:6px; }
 
   /* ============ HERO: ESTIMATED MARGIN ============
      (7) Sem References: a faixa deixou de ser expansivel. */
@@ -608,7 +628,7 @@
   .modal-section-body{ padding:12px 12px 12px; }
   .modal-foot{ padding:12px 16px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); flex:0 0 auto; }
   .btn-primary{ width:100%; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:14px; font-size:14px; font-weight:800; }
-  .btn-primary.green{ background:var(--green); }
+  .btn-primary.green{ background:var(--green-btn); }
   .btn-primary.red{ background:var(--red); }
   .btn-ghost{ width:100%; background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:13px; font-size:13.5px; font-weight:700; }
   .pill-btn{ background:var(--card); border:1px solid var(--line); color:var(--blue); font-size:11px; font-weight:700; border-radius:14px; padding:5px 12px; }
@@ -1153,7 +1173,10 @@
         <div class="hero">
           <span class="hero-l">Estimated Margin<button type="button" class="hero-i" onclick="openFormula()"
             title="Which fields feed the margin, and how">i</button></span>
-          <div class="hero-vline">
+          <!-- (v8-C13) A margem e o unico numero que muda sozinho na tela.
+               Com aria-live, quem usa leitor de tela ouve a mudanca em vez de
+               ter que voltar ate o topo para conferir. -->
+          <div class="hero-vline" aria-live="polite" aria-atomic="true">
             <span class="hero-v" id="hero-usd">US$ 0</span>
             <span class="hero-pct" id="hero-pct">0.0%</span>
           </div>

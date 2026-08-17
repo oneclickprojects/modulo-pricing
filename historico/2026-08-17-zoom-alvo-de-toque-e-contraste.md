@@ -1,0 +1,3 @@
+- Pinch para ampliar a tela voltou a funcionar — dá para dar zoom na grade de entregas
+- O "i" da margem e os steppers de quantidade e preço aceitam o toque numa área maior, sem mudar de tamanho na tela
+- Botão verde de confirmar escureceu para o texto branco ficar legível, e a margem no topo passa a ser anunciada por leitor de tela quando muda
