@@ -5217,6 +5217,10 @@ body.light #oc .mono.l{display:block}
 #oc .seg3 button.on{color:var(--text);border-bottom-color:var(--blue)}
 #oc .seg3 i{font-style:normal;min-width:17px;height:17px;border-radius:9px;background:var(--blue);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 5px}
 #oc .hd2 b{color:var(--text)}
+#oc .seg3.sc{overflow-x:auto;scrollbar-width:none;justify-content:flex-start}
+#oc .seg3.sc button{flex:1 0 auto;padding-left:10px;padding-right:10px}
+#oc .mk2{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);border-radius:1px}
+#oc .mtr-t{overflow:visible}
 #oc{position:fixed;inset:0;z-index:60;height:auto;max-width:none;margin:0;display:block}
 #oc>#oc-inner{width:100%;height:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;position:relative;background:var(--bg);overflow:hidden}
 #oc.frame{background:transparent;pointer-events:none}
@@ -5549,7 +5553,7 @@ function sens(t){return t*2204.62*0.05}
 function cT(){return trd(CID)}
 function pl(t,s,rows,note,btn){st.stack=[{k:'pg',t:t,cr:s,h:kv(rows)+(note?'<div class="lead">'+note+'</div>':'')+(btn&&TOUR?'<button class="ocbtn" data-cnext="1">'+btn+'</button>':'')}];render()}
 var CS=[
-{g:'Market / Pre-Trade',n:'Mkt, Exposure/Position & Risk analysis',o:'T',a:'T',d:'Before any offer, the trader reads curves, exposure by screen, long/short by crop and P&L sensitivity.',t:'An offer arrives from a broker.',v:function(){st.tt='por';render()}},
+{g:'Market / Pre-Trade',n:'Mkt, Exposure/Position & Risk analysis',o:'T',a:'T',d:'Before any offer, the trader reads curves, exposure by screen, long/short by crop and P&L sensitivity.',t:'An offer arrives from a broker.',v:function(){st.tt='mkt';render()}},
 {g:'Market / Pre-Trade',n:'Purchase/sale offer',o:'T',a:'T',v:function(){openTrade(CID)},d:'Offer from Faz. Santa Clara via broker: buy 300 t, 31-3-36 GS 28, crop 2027, 4.40 BRL/lb, valid until 16:00.',t:'Trader simulates the offer.'},
 {g:'Market / Pre-Trade',n:'P&L, Exposure/Position & Risk simulation',o:'T',a:'T',m:function(){cT().step=2},v:function(){openTrade(CID)},d:'P&L from the Purchase Order financial panel. Exposure, crop, hedge, long/short and NY sensitivity shown now vs with the trade.',t:'Internal trade confirmation.'},
 {g:'Market / Pre-Trade',n:'Internal trade confirmation',o:'T',a:'T',m:function(){cT().step=3},v:function(){openTrade(CID)},d:'Confirm Trade | Hedge. The order enters the book (+300 t, crop 2027).',t:'Hedge request.'},
@@ -5580,7 +5584,7 @@ function snapS(){return JSON.stringify({TR:TR,FX:FX,EV:EV})}
 function restoreS(s){var o=JSON.parse(s);TR.length=0;o.TR.forEach(function(x){TR.push(x)});FX.length=0;o.FX.forEach(function(x){FX.push(x)});EV.length=0;o.EV.forEach(function(x){EV.push(x)})}
 function caseStart(){BASE=snapS();TOUR=true;OCR.classList.add('tour');caseGo(0)}
 function caseEnd(){TOUR=false;restoreS(BASE);closeSheet();st.stack=[];st.a='T';OCR.classList.remove('tour');render()}
-function caseGo(i){ci=i;restoreS(BASE);for(var k=0;k<=i;k++)if(CS[k].m)CS[k].m();closeSheet();var s=CS[i];st.a=s.a;st.stack=[];st.tt=i===0?'por':'dec';render();drawBar();if(s.v)s.v()}
+function caseGo(i){ci=i;restoreS(BASE);for(var k=0;k<=i;k++)if(CS[k].m)CS[k].m();closeSheet();var s=CS[i];st.a=s.a;st.stack=[];st.tt=i===0?'mkt':'ob';render();drawBar();if(s.v)s.v()}
 /* Decide: itens individuais, título direto + ação em texto. Pending: grupos com contagem, abrem a lista. */
 var PG={};
 function act2(t){return {1:'Review',2:'Simulate',3:'Confirm',4:'Hedge',5:'Validate',6:'Send slip',7:'Send contract',8:'Confirm',9:'Book'}[t.step]||''}
@@ -5663,10 +5667,7 @@ function mktView(){var b=book();
  +sec2('By screen','',tbl(['Screen','c/lb','Basis','Net t'],MK.map(function(m){var n=(b.p[m[0]]||0)+(b.d[m[0]]||0);return [m[0],m[1].toFixed(2),'+'+m[3].toFixed(2),{v:n?ft(n):'-',c:cls(n)}]})))+'<div class="lead">Mock quotes, same values as the Curves screen of the prototype.</div>'}
 function decView(dp){return '<div class="lead">Offers and trades waiting for your decision.</div>'+rws(dp.d,'Nothing to decide')}
 function impView(dp){return sec2('With other areas',dp.n,rws(dp.p,'Nothing waiting on other areas'))+sec2('What changed in the book',EV.length,rws(EV.slice(0,5).map(function(e){return rw({data:'data-tr="'+e.tr+'" data-tab="Risk"',ti:e.x.split(' · ')[0]+' · '+e.tr.split('-').pop(),su:AN[e.a]+' · '+e.t,v:e.d?ft(e.d):'0 t',vc:cls(e.d)})})))}
-function homeT(){var dp=decPen('T'),t=st.tt||'por';
- var tabs=[['por','Portfolio'],['mkt','Market'],['dec','Decision',dp.d.length],['imp','Impact',dp.n]];
- var seg='<div class="seg3">'+tabs.map(function(x){return '<button data-tt="'+x[0]+'" class="'+(x[0]===t?'on':'')+'">'+x[1]+(x[2]?'<i>'+x[2]+'</i>':'')+'</button>'}).join('')+'</div>';
- return {sum:'',body:seg+(t==='por'?portView():t==='mkt'?mktView():t==='dec'?decView(dp):impView(dp))}}
+
 
 /* Validação (F/O): tela focada no que revisar, completar e o que acontece depois */
 function valHtml(t){var lots=t.hedge.lots,board=t.hedge.board;
@@ -5692,6 +5693,35 @@ function stepPage(t){var s=t.step,head='<div class="vh"><div class="vt">'+what(t
  var body=s===1?kv(ctx)+'<div class="two"><button class="ocbtn g" data-do="decline">Decline</button><button class="ocbtn" data-do="1">Simulate</button></div>':(ctx?kv(ctx):'')+(s===1?'':act(t));
  return head+body+more(t)}
 function drawBar(){var s=CS[ci];$('cbar').innerHTML='<div class="cbx"><button id="oc-cPrev" class="cbb"'+(ci?'':' disabled')+' aria-label="Previous">‹</button><button class="cbn" data-cbt="1"><em>Step '+(ci+1)+'/'+CS.length+' '+chips(s.o)+(CBO?' ▴':' ▾')+'</em><span>'+s.n+'</span></button><button id="oc-cNext" class="cbb pri" aria-label="Next">'+(ci<CS.length-1?'›':ico('check'))+'</button><button id="oc-cX" class="cbb" aria-label="Close">'+ico('x')+'</button></div>'+(CBO?'<div class="cb3">'+s.d+'</div><div class="cb4">Next: '+s.t+'</div>':'');OCR.style.setProperty('--cbh',$('cbar').offsetHeight+'px')}
+/* Menu de Trading (decisões de 06/11): Market, Portfolio, Risk, Order Book, Pricing. Sino único de pendências. */
+var POL=80,LIM=500; /* exemplos: cobertura mínima da política (%) e limite de exposição líquida do trader (t) */
+function offers(){return TR.filter(function(t){return t.step>=1&&t.step<=3})}
+function portView2(){var b=book(),u=BO.filter(function(x){return b.p[x]||b.d[x]}),c=byCrop(),oc=TR.filter(function(t){return inBook(t)});
+ return sec2('Physical and hedge by screen · t','','<div class="chc">'+barChart(u,[{v:u.map(function(x){return b.p[x]||0}),c:'a-T'},{v:u.map(function(x){return b.d[x]||0}),c:'a-F'},{v:u.map(function(x){return (b.p[x]||0)+(b.d[x]||0)}),c:'text'}],{f:function(v){return (v<0?'-':'')+num(v,0)}})+lgd([['Physical','a-T'],['Hedge','a-F'],['Open exposure','text']])+'</div>')
+ +'<div class="kfs">'+[{l:'Physical',v:ft(b.P),s:'in the book'},{l:'Hedge',v:ft(b.D),s:'booked futures'},{l:'Coverage',v:b.C+'%',s:'open '+ft(b.N)}].map(kf).join('')+'</div>'
+ +sec2('Long / short by crop · t','','<div class="chc">'+hBars(CROPS.map(function(k){return {l:'Crop '+k,v:c[k].p+c[k].d}}).concat([{l:'Total',v:b.N}]),{f:function(v){return ft(v)}})+'</div>')
+ +sec2('Open contracts',oc.length,rws(oc.map(function(t){return dcRow({data:'data-tr="'+t.id+'" data-tab="Trade"',ti:what(t),su:t.id+' · '+t.cp,m:hedSt(t)[0]})})))}
+function meter2(l,v,pct,mark,c){return '<div class="mtr"><div class="mtr-l"><span>'+l+'</span><b>'+v+'</b></div><div class="mtr-t" style="position:relative"><i style="width:'+Math.min(100,pct)+'%;background:var(--'+c+')"></i>'+(mark!=null?'<em class="mk2" style="left:'+mark+'%"></em>':'')+'</div></div>'}
+function riskView(){var b=book(),u=Math.round(Math.abs(b.N)/LIM*100);
+ return sec2('My limits','','<div class="chc">'+meter2('Net exposure vs limit*',ft(b.N)+' of ±'+LIM+' t · '+u+'%',u,null,u>80?'red':'amber')+meter2('Coverage vs policy*',b.C+'% · policy '+POL+'% min',b.C,POL,b.C<POL?'red':'green')+'</div>')
+ +sec2('P&L sensitivity · US$','','<div class="chc"><div class="sl2"><label for="oc-sC">NY move <b id="oc-sCv">'+sk(SENS.c,0)+' c/lb</b></label><input id="oc-sC" type="range" min="-10" max="10" step="1" value="'+SENS.c+'"><label for="oc-sF">FX move <b id="oc-sFv">'+sk(SENS.f,0)+'%</b></label><input id="oc-sF" type="range" min="-10" max="10" step="1" value="'+SENS.f+'"></div><div id="oc-sOut">'+sensOut()+'</div></div>')
+ +sec2('Risk drivers',EV.filter(function(e){return e.d}).length,rws(EV.filter(function(e){return e.d}).slice(0,4).map(function(e){return rw({data:'data-tr="'+e.tr+'" data-tab="Risk"',ti:e.x.split(' · ')[0]+' · '+e.tr.split('-').pop(),su:AN[e.a]+' · '+e.t,v:ft(e.d),vc:cls(e.d)})})))
+ +'<div class="lead">Trader view. * Limit and policy are example values.</div>'}
+function obView(){var o=offers();return '<div class="hd2"><span>Offers from counterparties and brokers</span><button class="lnk" data-wip="Manual offer entry">+ New offer</button></div>'+rws(o.map(function(t){return dcRow({data:'data-tr="'+t.id+'"',ti:what(t),su:t.cp+(t.via?' via '+t.via:'')+' · '+t.price+(t.valid?' · until '+t.valid.replace('today ',''):''),m:t.step===1?'Simulate':t.step===2?'Simulating':'Confirm'})}),'No offers waiting')+'<div class="lead">Manual entry today. Automatic integration later, same flow.</div>'}
+function prcView(){return rws([dcRow({data:'data-go="purchase"',ti:'Purchase',su:'Purchase order · current screen',m:'Open'}),dcRow({data:'data-wip="Sale"',ti:'Sale',su:'Sale order',m:'Soon'}),dcRow({data:'data-wip="Derivatives"',ti:'Derivatives',su:'Futures and options',m:'Soon'})])}
+function homeT(){var t=st.tt||'mkt',n=offers().length;
+ var tabs=[['mkt','Market'],['por','Portfolio'],['rsk','Risk'],['ob','Order Book',n],['prc','Pricing']];
+ var seg='<div class="seg3 sc">'+tabs.map(function(x){return '<button data-tt="'+x[0]+'" class="'+(x[0]===t?'on':'')+'">'+x[1]+(x[2]?'<i>'+x[2]+'</i>':'')+'</button>'}).join('')+'</div>';
+ var body=t==='mkt'?mktView():t==='por'?portView2():t==='rsk'?riskView():t==='ob'?obView():prcView();
+ if(t==='mkt')body='<div class="hd2"><span>Reference quotes · today 06:12</span><button class="lnk" data-case="1">Business case ›</button></div>'+body;
+ return {sum:'',body:seg+body}}
+function pendList(){var b=book(),crit=[],oth=[];
+ offers().forEach(function(t){crit.push(dcRow({data:'data-nav="tr|'+t.id+'"',ti:'Offer waiting · '+what(t),su:t.cp+(t.valid?' · until '+t.valid.replace('today ',''):''),m:'Order Book'}))});
+ if(b.C<POL)crit.push(dcRow({data:'data-nav="tab|rsk"',ti:'Coverage below policy*',su:b.C+'% vs '+POL+'% minimum',m:'Risk'}));
+ FX.filter(function(f){return f.st==='pending'}).forEach(function(f){crit.push(dcRow({data:'data-nav="fx|'+f.id+'"',ti:'Fixation to expire · '+f.type+' '+num(f.qty)+' t',su:f.k+' · '+f.scr,m:'Fixations'}))});
+ TR.filter(function(t){return t.step>=4&&t.step<10}).forEach(function(t){oth.push(dcRow({data:'data-nav="tr|'+t.id+'"',ti:FLOW[t.step][0],su:what(t)+' · with '+AN[PA[t.step]],m:AN[PA[t.step]]}))});
+ return {crit:crit,oth:oth}}
+function openPend(){var p=pendList();plain('Pending','Critical first',sec2('Critical',p.crit.length,rws(p.crit,'Nothing critical'))+sec2('Other',p.oth.length,rws(p.oth,'Nothing else')))}
 function evRow(e){return row({data:'data-tr="'+e.tr+'" data-tab="Risk"',a:e.a,ti:e.x,su:e.tr+' · '+AN[e.a]+' · '+e.t,rv:e.d?ft(e.d):'0 t',rvc:cls(e.d)})}
 
 /* Telas MVP */
@@ -5732,7 +5762,7 @@ function render(keep){
  $('bn').innerHTML=['T','F','R','O','I'].map(function(k){var n=queue(k).length;return '<button data-k="'+k+'" class="'+(k===a?'active':'')+'">'+ico(k)+AN[k]+(n&&k!=='R'?'<span class="bb">'+n+'</span>':'')+'</button>'}).join('');
  if(top&&top.k==='scr'&&FRAME[top.id]){OCR.classList.add('frame');$('poCr').textContent=AN[a]+' › '+ctxOf(top.c)[1]+' › '+(top.id==='portfolio'?'Portfolio':top.id==='curves'?'Curves':'Purchase Order')+' · existing screen';ensurePO(FRAME[top.id]);return}
  OCR.classList.remove('frame');document.body.classList.remove('oc-frame');
- var na=allAppr().length;var icons='<div class="icons"><button id="oc-exBtn" aria-label="Explore">'+ico('grid')+'</button><button class="ibx" id="oc-apprBtn" aria-label="Approvals">'+ico('inbox')+(na?'<span class="ibb">'+na+'</span>':'')+'</button><button class="dotbadge'+(unread?'':' off')+'" id="oc-bell" aria-label="Alerts">'+ico('bell')+'</button><button id="oc-theme" aria-label="Theme">'+ico(st.light?'moon':'sun')+'</button></div>';
+ var nc=pendList().crit.length;var icons='<div class="icons"><button id="oc-exBtn" aria-label="Explore">'+ico('grid')+'</button><button class="ibx" id="oc-bell" aria-label="Pending">'+ico('bell')+(nc?'<span class="ibb">'+nc+'</span>':'')+'</button><button id="oc-theme" aria-label="Theme">'+ico(st.light?'moon':'sun')+'</button></div>';
  var h,sum='',title,cr;
  if(!top){var r=home(a);sum=r.sum;h=r.body;$('top').innerHTML='<img class="mono d" src="data:image/png;base64,'+LOGO_D+'" alt=""><img class="mono l" src="data:image/png;base64,'+LOGO_L+'" alt=""><h1>'+AN[a]+'</h1>'+icons}
  else{
@@ -5828,10 +5858,10 @@ OCR.addEventListener('click',function(e){
  var el=e.target.closest('button');if(!el)return;var d=el.dataset;
  if(el.id==='oc-bk'||el.id==='oc-poBack'){history.back();return}
  if(el.id==='oc-sx'){if(TOUR){closeSheet();return}history.back();return}
- if(el.id==='oc-bell'){openAlerts();return}
+ if(el.id==='oc-bell'){openPend();return}
  if(el.id==='oc-theme'){if(window.toggleTheme)window.toggleTheme();st.light=document.body.classList.contains('light');render(true);return}
  if(d.k){if(d.k===st.a&&!st.stack.length)return;go(function(){st.a=d.k;st.stack=[]});return}
- if(el.id==='oc-cNext'){if(ci<CS.length-1)caseGo(ci+1);else caseEnd();return}if(el.id==='oc-cPrev'){if(ci>0)caseGo(ci-1);return}if(el.id==='oc-cX'){caseEnd();return}if(d.cnext){if(ci<CS.length-1)caseGo(ci+1);else caseEnd();return}if(d.cbt){CBO=!CBO;drawBar();return}if(d.gop){var gq=d.gop.split('|');if(TOUR){st.a=gq[0];st.stack=[{k:'tp',tr:gq[1]}];render();return}go(function(){st.a=gq[0];st.stack=[{k:'tp',tr:gq[1]}]});return}if(d.full){st.sh.full=1;drawTrade();return}if(d.ret){toast('Returned to Trading with a note (proposal)');return}if(d.tt){st.tt=d.tt;render(true);return}if(el.id==='oc-exBtn'){plain('Explore '+AN[st.a],'Areas and screens','<div class="chips">'+AR[st.a].map(function(c){return '<button data-exctx="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>');return}if(d.exctx){if(hist.length)hist[hist.length-1]=snap();closeSheet();st.stack.push({k:'ctx',id:d.exctx});render();return}if(d.case){caseStart();return}if(d.pg){var g=PG[d.pg];plain(g.t,AN[st.a],'<div class="rws">'+g.h+'</div>');return}if(el.id==='oc-apprBtn'){st.af='All';var tp=st.stack[st.stack.length-1];if(tp&&tp.k==='appr'){render(true);return}go(function(){st.stack.push({k:'appr'})});return}if(d.appr){st.af=d.appr;go(function(){st.stack.push({k:'appr'})});return}if(d.af){st.af=d.af;render(true);return}if(d.aptr){approveTr(d.aptr);return}if(d.apfx){var fz=FX.filter(function(x){return x.id===d.apfx})[0];fz.st='confirmed';ev(trd(fz.k),0,'Fixation '+fz.id+' confirmed ('+fz.type+')','F');toast('Fixation approved');render(true);return}if(d.crop){var ca=st.a;plain('By crop',AN[ca]+' · totals and crops',(ca==='F'?'':'<div class="sec-t"><span>Net exposure</span></div>'+expTable())+(ca==='R'?'':'<div class="sec-t"><span>P&L · US$k</span></div>'+pnlTable())+'<div class="lead">FX, Day, MTD and YTD are example values.</div>');return}if(d.tg){OP[d.tg]=!OP[d.tg];render(true);return}if(d.fxok&&TOUR){caseGo(ci+1);return}if(d.fxok){var f=FX.filter(function(x){return x.id===d.fxok})[0];f.st='confirmed';ev(trd(f.k),0,'Fixation '+f.id+' confirmed ('+f.type+')',st.a);toast('Fixation confirmed');if($('sheet').classList.contains('on'))openFix(f.id);render(true);return}
+ if(el.id==='oc-cNext'){if(ci<CS.length-1)caseGo(ci+1);else caseEnd();return}if(el.id==='oc-cPrev'){if(ci>0)caseGo(ci-1);return}if(el.id==='oc-cX'){caseEnd();return}if(d.wip){toast(d.wip+' · in construction');return}if(d.nav){var nv=d.nav.split('|');if(hist.length&&hist[hist.length-1].k==='sheet')hist[hist.length-1]=snap();closeSheet();st.a='T';if(nv[0]==='tab'){st.stack=[];st.tt=nv[1];render()}else if(nv[0]==='fx'){openFix(nv[1])}else{st.stack=[];render();openTrade(nv[1])}return}if(d.cnext){if(ci<CS.length-1)caseGo(ci+1);else caseEnd();return}if(d.cbt){CBO=!CBO;drawBar();return}if(d.gop){var gq=d.gop.split('|');if(TOUR){st.a=gq[0];st.stack=[{k:'tp',tr:gq[1]}];render();return}go(function(){st.a=gq[0];st.stack=[{k:'tp',tr:gq[1]}]});return}if(d.full){st.sh.full=1;drawTrade();return}if(d.ret){toast('Returned to Trading with a note (proposal)');return}if(d.tt){st.tt=d.tt;render(true);return}if(el.id==='oc-exBtn'){plain('Explore '+AN[st.a],'Areas and screens','<div class="chips">'+AR[st.a].map(function(c){return '<button data-exctx="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>');return}if(d.exctx){if(hist.length)hist[hist.length-1]=snap();closeSheet();st.stack.push({k:'ctx',id:d.exctx});render();return}if(d.case){caseStart();return}if(d.pg){var g=PG[d.pg];plain(g.t,AN[st.a],'<div class="rws">'+g.h+'</div>');return}if(el.id==='oc-apprBtn'){st.af='All';var tp=st.stack[st.stack.length-1];if(tp&&tp.k==='appr'){render(true);return}go(function(){st.stack.push({k:'appr'})});return}if(d.appr){st.af=d.appr;go(function(){st.stack.push({k:'appr'})});return}if(d.af){st.af=d.af;render(true);return}if(d.aptr){approveTr(d.aptr);return}if(d.apfx){var fz=FX.filter(function(x){return x.id===d.apfx})[0];fz.st='confirmed';ev(trd(fz.k),0,'Fixation '+fz.id+' confirmed ('+fz.type+')','F');toast('Fixation approved');render(true);return}if(d.crop){var ca=st.a;plain('By crop',AN[ca]+' · totals and crops',(ca==='F'?'':'<div class="sec-t"><span>Net exposure</span></div>'+expTable())+(ca==='R'?'':'<div class="sec-t"><span>P&L · US$k</span></div>'+pnlTable())+'<div class="lead">FX, Day, MTD and YTD are example values.</div>');return}if(d.tg){OP[d.tg]=!OP[d.tg];render(true);return}if(d.fxok&&TOUR){caseGo(ci+1);return}if(d.fxok){var f=FX.filter(function(x){return x.id===d.fxok})[0];f.st='confirmed';ev(trd(f.k),0,'Fixation '+f.id+' confirmed ('+f.type+')',st.a);toast('Fixation confirmed');if($('sheet').classList.contains('on'))openFix(f.id);render(true);return}
  if(d.do){doStep(d.do);return}
  if(d.goa){var tgt=d.goa;hist[hist.length-1]=snap();closeSheet();st.a=tgt;st.stack=[];render();return}
  if(el.closest('#oc-stabs')&&d.tab){st.sh.tab=d.tab;drawTrade();return}

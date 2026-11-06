@@ -1,0 +1,2 @@
+- Trading agora tem os menus Market, Portfolio, Risk, Order Book e Pricing (Purchase, Sale e Derivatives dentro de Pricing)
+- Um sino só no topo com as pendências, críticas primeiro; cada item leva à tela certa
