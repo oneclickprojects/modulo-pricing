@@ -1,0 +1,1 @@
+- Puxar a tela para baixo, estando no topo, atualiza o app (vale também na Purchase Order)
