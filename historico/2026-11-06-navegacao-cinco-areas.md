@@ -1,0 +1,3 @@
+- Nova navegação com cinco áreas na barra inferior (Trading, Finance, Risk, Operations, IT); Trading abre em Portfolio, Market, Decision e Impact
+- Business case em Trading: uma compra de algodão passa pelas 27 etapas do fluxo, tela a tela, com cada ação avançando o passo
+- Purchase Order, Portfolio e Curves continuam iguais e agora abrem dentro de Trading
