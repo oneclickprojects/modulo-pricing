@@ -5727,7 +5727,7 @@ function riskView(){var b=book(),u=Math.round(Math.abs(b.N)/LIM*100);
  +sec2('P&L sensitivity · US$','','<div class="chc"><div class="sl2"><label for="oc-sC">NY move <b id="oc-sCv">'+sk(SENS.c,0)+' c/lb</b></label><input id="oc-sC" type="range" min="-10" max="10" step="1" value="'+SENS.c+'"><label for="oc-sF">FX move <b id="oc-sFv">'+sk(SENS.f,0)+'%</b></label><input id="oc-sF" type="range" min="-10" max="10" step="1" value="'+SENS.f+'"></div><div id="oc-sOut">'+sensOut()+'</div></div>')
  +sec2('Risk drivers',EV.filter(function(e){return e.d}).length,rws(EV.filter(function(e){return e.d}).slice(0,4).map(function(e){return rw({data:'data-tr="'+e.tr+'" data-tab="Risk"',ti:e.x.split(' · ')[0]+' · '+e.tr.split('-').pop(),su:AN[e.a]+' · '+e.t,v:ft(e.d),vc:cls(e.d)})})))
  +'<div class="lead">Trader view. * Limit and policy are example values.</div>'}
-function obView(){var o=offers();return '<div class="hd2"><span>Offers from counterparties and brokers</span><button class="lnk" data-wip="Manual offer entry">+ New offer</button></div>'+rws(o.map(function(t){return dcRow({data:'data-tr="'+t.id+'"',ti:what(t),su:t.cp+(t.via?' via '+t.via:'')+' · '+t.price+(t.valid?' · until '+t.valid.replace('today ',''):''),m:t.step===1?'Simulate':t.step===2?'Simulating':'Confirm'})}),'No offers waiting')+'<div class="lead">Manual entry today. Automatic integration later, same flow.</div>'}
+function obView(){var o=offers();return '<div class="hd2"><span>Offers from counterparties and brokers</span><button class="lnk" data-wip="Manual offer entry">+ New offer</button></div>'+rws(o.map(function(t){return dcRow({data:'data-sim="'+t.id+'"',ti:what(t),su:t.cp+(t.via?' via '+t.via:'')+' · '+t.price+(t.valid?' · until '+t.valid.replace('today ',''):''),m:'Go to Pricing'})}),'No offers waiting')+'<div class="lead">Manual entry today. Automatic integration later, same flow.</div>'}
 function prcView(){return rws([dcRow({data:'data-go="purchase"',ti:'Purchase',su:'Purchase order · current screen',m:'Open'}),dcRow({data:'data-go="sales"',ti:'Sale',su:'Sale order · same screen as Purchase',m:'Open'}),dcRow({data:'data-wip="Derivatives"',ti:'Derivatives',su:'Futures and options',m:'Soon'})])}
 function homeT(){var t=st.tt||'mkt',n=offers().length;
  var tabs=[['mkt','Market'],['por','Portfolio'],['rsk','Risk'],['ob','Order Book',n],['prc','Pricing']];
@@ -5780,7 +5780,7 @@ function ctxOf(id){return AR[st.a].filter(function(c){return c[0]===id})[0]}
 function render(keep){
  var a=st.a,top=st.stack[st.stack.length-1];
  $('bn').innerHTML=['T','F','R','O','I'].map(function(k){var n=queue(k).length;return '<button data-k="'+k+'" class="'+(k===a?'active':'')+'">'+ico(k)+AN[k]+(n&&k!=='R'?'<span class="bb">'+n+'</span>':'')+'</button>'}).join('');
- if(top&&top.k==='scr'&&FRAME[top.id]){OCR.classList.add('frame');$('poCr').textContent=AN[a]+' › '+ctxOf(top.c)[1]+' › '+(top.id==='portfolio'?'Portfolio':top.id==='curves'?'Curves':top.id==='sales'?'Sale Order':'Purchase Order')+(top.id==='sales'?' · based on Purchase':' · existing screen');ensurePO(FRAME[top.id]);return}
+ if(top&&top.k==='scr'&&FRAME[top.id]){OCR.classList.add('frame');$('poCr').textContent=AN[a]+' › '+ctxOf(top.c)[1]+' › '+(top.id==='portfolio'?'Portfolio':top.id==='curves'?'Curves':top.id==='sales'?'Sale Order':'Purchase Order')+((top.id==='purchase'||top.id==='sales')&&OFR?' · '+OFR:top.id==='sales'?' · based on Purchase':' · existing screen');ensurePO(FRAME[top.id]);return}
  OCR.classList.remove('frame');document.body.classList.remove('oc-frame');
  var nc=pendList().crit.length;var icons='<div class="icons"><button id="oc-exBtn" aria-label="Explore">'+ico('grid')+'</button><button class="ibx" id="oc-bell" aria-label="Pending">'+ico('bell')+(nc?'<span class="ibb">'+nc+'</span>':'')+'</button><button id="oc-theme" aria-label="Theme">'+ico(st.light?'moon':'sun')+'</button></div>';
  var h,sum='',title,cr;
@@ -5890,6 +5890,7 @@ OCR.addEventListener('click',function(e){
  if(d.tr){if($('sheet').classList.contains('on')){var t=trd(d.tr);st.sh={tr:d.tr,tab:d.tab||'Flow'};$('sti').textContent=t.id+' · '+t.side+(t.draft?' (draft)':'');$('ssu').textContent=num(t.qty)+' t · '+t.grade+' · crop '+t.crop+' · '+t.cp;drawTrade()}else openTrade(d.tr,d.tab);return}
  if(d.fx){openFix(d.fx);return}
  if(d.plan){var p=d.plan.split('|');openPlanned(p[0],p[1]);return}
+ if(d.go==='purchase'||d.go==='sales')OFR=null;
  if(d.go){if($('sheet').classList.contains('on')){hist[hist.length-1]=snap();closeSheet();var g=d.go;var f2=findScr(st.a,g);if(f2&&f2.i[2]==='M'){st.stack.push({k:'scr',id:g,c:f2.c[0]});render()}return}openScreen(d.go);return}
  if(d.ctx){go(function(){st.stack.push({k:'ctx',id:d.ctx})});return}
  if(d.scr){var f3=findScr(st.a,d.scr);if(f3.i[2]!=='M'){openPlanned(f3.i[1],f3.i[2],AN[st.a]+' › '+f3.c[1]);return}go(function(){st.stack.push({k:'scr',id:d.scr,c:f3.c[0]})});return}
@@ -5916,7 +5917,7 @@ function ensurePO(v){OCR.classList.add('frame');document.body.classList.add('oc-
  try{window.goTo(v==='sales'?'purchase':v,true)}catch(e){}window.scrollTo(0,0)}
 /* Order Book › Simulate: abre Purchase (compra) ou Sale (venda) já preenchida com a oferta */
 var PRE=null,OFR=null;
-function simIn(t){if(!t)return;OFR=t.id;PRE={side:t.side,qty:t.qty,price:t.price,crop:t.crop,grade:t.grade,board:t.board,cp:t.cp};
+function simIn(t){if(!t)return;if(t.step===1){t.step=2;ev(t,0,'Offer from '+t.cp+' under simulation','T')}OFR=t.id;PRE={side:t.side,qty:t.qty,price:t.price,crop:t.crop,grade:t.grade,board:t.board,cp:t.cp};
  var scr={k:'scr',id:t.side==='Buy'?'purchase':'sales',c:'phys'};
  if($('sheet').classList.contains('on')){hist[hist.length-1]=snap();closeSheet();st.a='T';st.stack.push(scr);render();return}
  go(function(){st.a='T';st.stack.push(scr)})}
@@ -5929,6 +5930,9 @@ window.ocOnCommit=function(kind,rec,L){var t=OFR&&trd(OFR);if(!t||(t.side==='Buy
  if(/BRL/.test(rec.price||'')&&L&&L.okLegs){var fx=0;L.okLegs.forEach(function(l){fx+=sgn(t)*l.q*l.flatBrl/l.fx});EXC.fx[t.crop]=(EXC.fx[t.crop]||0)+fx/1e6}
  t.price=rec.price;t.user=rec.reg&&rec.reg.user||t.user;t.ref=rec.id;t.draft=false;t.step=4;OFR=null;
  ev(t,sgn(t)*t.qty,'Confirmed internally as '+rec.id+' · enters the book','T')}
+/* Oferta aberta no Pricing: Cancel vira Decline */
+window.ocOffer=function(){var t=OFR&&trd(OFR);return t&&(t.side==='Buy')===(window.PO_SIDE!=='sell')?{id:t.id,cp:t.cp}:null};
+window.ocDecline=function(){var t=OFR&&trd(OFR);OFR=null;if(t)TR.splice(TR.indexOf(t),1)};
 function syncTheme(){}
 /* Book atual para o impacto na confirmacao do pricing (ocImpact) */
 window.ocBook=function(){var b=book();return {p:b.p,d:b.d,crop:byCrop(),mk:MK,fx:EXC.fx}};
@@ -6035,6 +6039,12 @@ body.po-sale #vswitch{display:none!important}
  /* "New order" na venda volta para a venda de exemplo, nao para a compra */
  var cf=window.clearForm;
  if(cf)window.clearForm=function(c){var r=cf.apply(this,arguments);if(!c&&window.PO_SIDE==='sell')restoreState(stateFor(SALE_DEMO));return r};
+ /* Cancel: com oferta do Order Book aberta vira Decline; na venda o texto fala de Sale */
+ var co=window.cancelOrder;
+ if(co&&typeof askCancel==='function')window.cancelOrder=function(){var o=window.ocOffer&&window.ocOffer(),sell=window.PO_SIDE==='sell';
+  if(o)return askCancel({title:'Decline offer?',sub:o.id+' · '+o.cp,body:'The offer leaves the Order Book. Nothing is sent to the counterparty yet.',confirmLabel:'Yes, decline',onConfirm:function(){window.ocDecline();clearForm(false);showToast('Offer declined')}});
+  if(sell)return askCancel({title:'Cancel sale order?',sub:'Nothing will be sent to OneClick standard',body:'Quantity, price, product, delivery months and routes on screen go back to the default order. This cannot be undone.',confirmLabel:'Yes, cancel order',onConfirm:function(){clearForm(false);showToast('Order cancelled')}});
+  return co.apply(this,arguments)};
  /* Reabrir uma ordem do Portfolio volta para o lado dela (Buy ou Sell) */
  var ro=window.reopenItem;
  if(ro)window.reopenItem=function(id){var it=null;['drafts','pending','positions'].forEach(function(k){(PORTFOLIO[k]||[]).forEach(function(i){if(i.id===id)it=i})});

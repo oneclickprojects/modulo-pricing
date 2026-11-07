@@ -1,0 +1,3 @@
+- No Order Book, todas as ofertas mostram "Go to Pricing" e abrem direto a Purchase (compra) ou a Sale (venda), já preenchidas
+- A confirmação interna acontece só no Confirm do Pricing
+- Com uma oferta aberta no Pricing, arrastar para Cancel recusa a oferta e ela sai do Order Book
