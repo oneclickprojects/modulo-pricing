@@ -1,0 +1,3 @@
+- Pricing › Sale abre a tela de venda, igual à Purchase, com a margem calculada para venda e o impacto no book no Confirm
+- No Order Book, Simulate abre a oferta já preenchida: compra na Purchase, venda na Sale
+- Ao confirmar no Pricing, a oferta sai do Order Book e entra no book

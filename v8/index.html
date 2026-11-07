@@ -3869,8 +3869,11 @@
         chargeTotals[key].usd += (c.brl / l.fx) * share;
       });
     });
-    var costBrlTon = flatBrlT + commBrlT + freightBrlT + chargesBrlT;
-    var costUsdTon = flatUsdT + commUsdT + freightUsdT + chargesUsdT;
+    // OneClick Mobile MVP: na venda (Pricing › Sale) comissao, frete e charges
+    // saem do preco recebido; "custo" passa a ser o liquido da venda.
+    var SALE = window.PO_SIDE === 'sell', SG = SALE ? -1 : 1;
+    var costBrlTon = flatBrlT + SG * (commBrlT + freightBrlT + chargesBrlT);
+    var costUsdTon = flatUsdT + SG * (commUsdT + freightUsdT + chargesUsdT);
     // Fx implicito do OneClick: custo total R$/t / custo total US$/t.
     var fxImplied = costUsdTon > 0 ? costBrlTon / costUsdTon : 0;
     // A ordem so pode ser precificada quando ha quantidade, entregas validas
@@ -3880,9 +3883,9 @@
     // ---------- 3. basis, receita, custo e margem ----------
     var PTS = 100 / FACTOR_LB_TON;                 // US$/t -> Cts/lb
     var difFlat = flatUsdT * PTS - avgIce;         // so o produto desconta o Ice
-    var difComm = commUsdT * PTS;
-    var difFreight = freightUsdT * PTS;
-    var difCharges = chargesUsdT * PTS;
+    var difComm = SG * commUsdT * PTS;
+    var difFreight = SG * freightUsdT * PTS;
+    var difCharges = SG * chargesUsdT * PTS;
     var impliedBasis = difFlat + difComm + difFreight + difCharges;
 
     var costBrl = costBrlTon * Q;
@@ -3890,9 +3893,12 @@
     var marketUsdTon = ((avgIce + avgMktBasis) / 100) * FACTOR_LB_TON;
     var revenueBrl = marketUsdTon * fxImplied * Q;
 
-    var marginUsd = (avgMktBasis - impliedBasis) * Q * (FACTOR_LB_TON / 100);
-    var marginBrl = revenueBrl - costBrl;
-    var marginPct = costBrl > 0 ? (marginBrl / costBrl) * 100 : 0;
+    // Na venda a conta inverte: basis liquido da venda contra o basis de mercado,
+    // e o valor de mercado (revenueBrl) vira a base do %.
+    var marginUsd = SG * (avgMktBasis - impliedBasis) * Q * (FACTOR_LB_TON / 100);
+    var marginBrl = SG * (revenueBrl - costBrl);
+    var pctBase = SALE ? revenueBrl : costBrl;
+    var marginPct = pctBase > 0 ? (marginBrl / pctBase) * 100 : 0;
     var marginPerTon = Q > 0 ? marginUsd / Q : 0;
     if (!ready) { marginUsd = 0; marginBrl = 0; marginPct = 0; marginPerTon = 0; }
 
@@ -4065,7 +4071,8 @@
     var F = FACTOR_LB_TON / 100;   // 22.0462 — pontos para US$/t
 
     function line(name, brl, usd, dif, cls, screens, lupa) {
-      var expBrl = -(brl * Q);
+      // OneClick Mobile MVP: na venda o algodao e o total entram no caixa
+      var expBrl = (window.PO_SIDE === 'sell' && (name === 'Cotton' || cls === 'tot') ? 1 : -1) * brl * Q;
       var expUsd = dif * F * Q;
       var fx = usd !== 0 ? brl / usd : 0;
       var num = function (v, dp, extra) {
@@ -4091,7 +4098,7 @@
       line('Charges', d.chargesBrl, d.chargesUsd, d.difCharges, '', fxScreens, true)
     ];
     d.chargeLines.forEach(function (l) {
-      var dif = l.usd * (100 / FACTOR_LB_TON);
+      var dif = (window.PO_SIDE === 'sell' ? -1 : 1) * l.usd * (100 / FACTOR_LB_TON);
       rows.push(line(l.label, l.brl, l.usd, dif, 'sub', ''));
     });
     rows.push(line('Commission', d.commBrl, d.commUsd, d.difComm, '', fxScreens));
@@ -4366,7 +4373,7 @@
     var hero = document.getElementById('hero-usd');
     var pos = hero.classList.contains('pos');
     var nR = routeIndexes().length, nM = monthRows().length;
-    var meta = ['Buy', fmt(qty, 2) + ' t',
+    var meta = [(window.PO_SIDE === 'sell' ? 'Sell' : 'Buy'), fmt(qty, 2) + ' t',
       document.getElementById('in-grade').value + ' ' + document.getElementById('in-crop').value,
       nM + (nM === 1 ? ' month' : ' months') + ' / ' + nR + (nR === 1 ? ' route' : ' routes')];
     if (supplier) meta.push(supplier);
@@ -4380,7 +4387,7 @@
       });
     }
     var record = {
-      id: editingId || nextId(kind === 'save' ? 'DRF' : 'PO'),
+      id: editingId || nextId(kind === 'save' ? 'DRF' : (window.PO_SIDE === 'sell' ? 'SC' : 'PO')),
       reg: prevReg || { user: SESSION_USER, dateIso: todayIso() },
       status: kind === 'save' ? 'sim' : 'pend',
       meta: meta.join(' · '),
@@ -4400,6 +4407,8 @@
     closeCommit(); setEditing(null); renderPortfolioActive();
     if (kind === 'save') showToast('Order saved to Portfolio · Drafts');
     else showDone(record, kind);
+    // OneClick Mobile MVP: avisa o Order Book (oferta confirmada sai da fila)
+    if (window.ocOnCommit) window.ocOnCommit(kind, record, LAST);
   }
 
   // ============================================================
@@ -5337,7 +5346,7 @@ O:[['pend','Pending','Today\'s queue',[['opqueue','Pending Actions','M'],['exc',
 I:[['plat','Platform','Health and integrations',[['ihealth','System Health','M'],['integ','Integrations','N'],['ifaces','Interfaces','N'],['logs','Logs / Exceptions','N']]],
  ['data','Data','Data and quality',[['dq','Data Quality','N'],['data','Data','N'],['auto','Automation','F']]],
  ['adm','Administration','Users and configuration',[['users','Users & Access','N'],['conf','Configuration','N'],['wfa','Workflow Administration','F'],['padm','Platform Administration','F']]]]};
-var FRAME={purchase:'purchase',pricing:'purchase',curves:'curves',portfolio:'portfolio'};
+var FRAME={purchase:'purchase',pricing:'purchase',sales:'sales',curves:'curves',portfolio:'portfolio'};
 var QA={T:[['New purchase','purchase'],['New sale','sales'],['Hedge requests','hedges'],['Market','mktctx']],F:[['Validate','validation'],['Book','booking'],['P&L','pnl']],R:[['What changed','drivers'],['Exposure','netexp'],['Coverage','cover']],O:[['Queue','opqueue'],['Trade slips','slips'],['Contracts','contracts']],I:[['System health','ihealth']]};
 
 var st={a:'T',stack:[],sh:null,light:false};
@@ -5719,7 +5728,7 @@ function riskView(){var b=book(),u=Math.round(Math.abs(b.N)/LIM*100);
  +sec2('Risk drivers',EV.filter(function(e){return e.d}).length,rws(EV.filter(function(e){return e.d}).slice(0,4).map(function(e){return rw({data:'data-tr="'+e.tr+'" data-tab="Risk"',ti:e.x.split(' · ')[0]+' · '+e.tr.split('-').pop(),su:AN[e.a]+' · '+e.t,v:ft(e.d),vc:cls(e.d)})})))
  +'<div class="lead">Trader view. * Limit and policy are example values.</div>'}
 function obView(){var o=offers();return '<div class="hd2"><span>Offers from counterparties and brokers</span><button class="lnk" data-wip="Manual offer entry">+ New offer</button></div>'+rws(o.map(function(t){return dcRow({data:'data-tr="'+t.id+'"',ti:what(t),su:t.cp+(t.via?' via '+t.via:'')+' · '+t.price+(t.valid?' · until '+t.valid.replace('today ',''):''),m:t.step===1?'Simulate':t.step===2?'Simulating':'Confirm'})}),'No offers waiting')+'<div class="lead">Manual entry today. Automatic integration later, same flow.</div>'}
-function prcView(){return rws([dcRow({data:'data-go="purchase"',ti:'Purchase',su:'Purchase order · current screen',m:'Open'}),dcRow({data:'data-wip="Sale"',ti:'Sale',su:'Sale order',m:'Soon'}),dcRow({data:'data-wip="Derivatives"',ti:'Derivatives',su:'Futures and options',m:'Soon'})])}
+function prcView(){return rws([dcRow({data:'data-go="purchase"',ti:'Purchase',su:'Purchase order · current screen',m:'Open'}),dcRow({data:'data-go="sales"',ti:'Sale',su:'Sale order · same screen as Purchase',m:'Open'}),dcRow({data:'data-wip="Derivatives"',ti:'Derivatives',su:'Futures and options',m:'Soon'})])}
 function homeT(){var t=st.tt||'mkt',n=offers().length;
  var tabs=[['mkt','Market'],['por','Portfolio'],['rsk','Risk'],['ob','Order Book',n],['prc','Pricing']];
  var seg='<div class="seg3 sc">'+tabs.map(function(x){return '<button data-tt="'+x[0]+'" class="'+(x[0]===t?'on':'')+'">'+x[1]+(x[2]?'<i>'+x[2]+'</i>':'')+'</button>'}).join('')+'</div>';
@@ -5771,7 +5780,7 @@ function ctxOf(id){return AR[st.a].filter(function(c){return c[0]===id})[0]}
 function render(keep){
  var a=st.a,top=st.stack[st.stack.length-1];
  $('bn').innerHTML=['T','F','R','O','I'].map(function(k){var n=queue(k).length;return '<button data-k="'+k+'" class="'+(k===a?'active':'')+'">'+ico(k)+AN[k]+(n&&k!=='R'?'<span class="bb">'+n+'</span>':'')+'</button>'}).join('');
- if(top&&top.k==='scr'&&FRAME[top.id]){OCR.classList.add('frame');$('poCr').textContent=AN[a]+' › '+ctxOf(top.c)[1]+' › '+(top.id==='portfolio'?'Portfolio':top.id==='curves'?'Curves':'Purchase Order')+' · existing screen';ensurePO(FRAME[top.id]);return}
+ if(top&&top.k==='scr'&&FRAME[top.id]){OCR.classList.add('frame');$('poCr').textContent=AN[a]+' › '+ctxOf(top.c)[1]+' › '+(top.id==='portfolio'?'Portfolio':top.id==='curves'?'Curves':top.id==='sales'?'Sale Order':'Purchase Order')+(top.id==='sales'?' · based on Purchase':' · existing screen');ensurePO(FRAME[top.id]);return}
  OCR.classList.remove('frame');document.body.classList.remove('oc-frame');
  var nc=pendList().crit.length;var icons='<div class="icons"><button id="oc-exBtn" aria-label="Explore">'+ico('grid')+'</button><button class="ibx" id="oc-bell" aria-label="Pending">'+ico('bell')+(nc?'<span class="ibb">'+nc+'</span>':'')+'</button><button id="oc-theme" aria-label="Theme">'+ico(st.light?'moon':'sun')+'</button></div>';
  var h,sum='',title,cr;
@@ -5829,6 +5838,7 @@ function drawTrade(){
 function act(t){var s=t.step,own=FLOW[s][1];
  if(own.indexOf(st.a)<0)return '<div class="lead">Owned by '+own.split('').map(function(c){return AN[c]}).join(' / ')+'.</div><button class="ocbtn g" data-goa="'+PA[s]+'">Open in '+AN[PA[s]]+'</button>';
  if(s===1)return kv([['From',t.cp+(t.via?' via '+t.via:'')],['Price',t.price],['Product',t.grade+' · crop '+t.crop],['Valid',t.valid||'-']])+'<div class="two"><button class="ocbtn g" data-do="decline">Decline</button><button class="ocbtn" data-do="1">Simulate</button></div>';
+ if(s===2&&!TOUR&&t.id.indexOf('OF-')===0)return '<div class="lead">Simulation runs in Pricing. Confirm there and the trade enters the book.</div><button class="ocbtn" data-sim="'+t.id+'">Continue in Pricing · '+(t.side==='Buy'?'Purchase':'Sale')+'</button>';
  if(s===2)return '<button class="ocbtn g" data-go="purchase">P&L · estimated margin in Purchase Order</button>'+impactHtml(t)+'<button class="ocbtn" data-do="1">Continue to confirm</button>';
  if(s===3)return impactHtml(t)+'<div class="swipe-wrap"><div class="swipe-track" id="oc-trk"><span class="swipe-side l">'+ico('x')+'Keep draft</span><span class="swipe-side r">Confirm'+ico('chev')+'</span><div class="swipe-knob" id="oc-knob">'+ico('arrows')+'</div></div></div><div class="hint">Drag right to confirm internally · left to keep as draft</div>';
  if(s===4){var opts=Object.keys(t.board).concat(BO.filter(function(x){return !t.board[x]}));return '<div class="two"><label class="fld">Lots (50,000 lb)<input id="oc-hl" type="number" inputmode="numeric" value="'+Math.round(t.qty/LOT)+'"></label><label class="fld">Board<select id="oc-hb">'+opts.map(function(o){return '<option>'+o+'</option>'}).join('')+'</select></label></div><div class="two"><button class="ocbtn g" data-do="nohedge">No hedge</button><button class="ocbtn" data-do="hedge">Request hedge</button></div>'}
@@ -5836,7 +5846,7 @@ function act(t){var s=t.step,own=FLOW[s][1];
 }
 function doStep(k){if(TOUR){if(k==='decline'){toast('In this business case the offer is accepted');return}caseGo(ci+1);return}ensureSh();var t=trd(st.sh.tr),s=t.step,a=st.a;
  if(k==='decline'){TR.splice(TR.indexOf(t),1);toast('Offer declined');history.back();render(true);return}
- if(s===1){t.step=2;ev(t,0,'Offer from '+t.cp+' under simulation','T')}
+ if(s===1){t.step=2;ev(t,0,'Offer from '+t.cp+' under simulation','T');simIn(t);return}
  else if(s===2){t.step=3;ev(t,0,'Offer simulated · ready to confirm','T')}
  else if(s===3){t.draft=false;t.step=4;ev(t,sgn(t)*t.qty,'Confirmed internally · enters the book','T')}
  else if(s===4){if(k==='nohedge'){t.hedge={lots:0,st:'none'};ev(t,0,'No hedge requested','T')}else{var l=parseInt($('hl').value,10)||0;if(l<=0){toast('Enter the number of lots');return}t.hedge={lots:l,board:$('hb').value,st:'requested'};ev(t,0,'Hedge requested · '+l+' lots '+t.hedge.board,'T')}t.step=5}
@@ -5874,6 +5884,7 @@ OCR.addEventListener('click',function(e){
  if(d.k){if(d.k===st.a&&!st.stack.length)return;go(function(){st.a=d.k;st.stack=[]});return}
  if(el.id==='oc-cNext'){if(ci<CS.length-1)caseGo(ci+1);else caseEnd();return}if(el.id==='oc-cPrev'){if(ci>0)caseGo(ci-1);return}if(el.id==='oc-cX'){caseEnd();return}if(d.wip){toast(d.wip+' · in construction');return}if(d.nav){var nv=d.nav.split('|');if(hist.length&&hist[hist.length-1].k==='sheet')hist[hist.length-1]=snap();closeSheet();st.a='T';if(nv[0]==='tab'){st.stack=[];st.tt=nv[1];render()}else if(nv[0]==='fx'){openFix(nv[1])}else{st.stack=[];render();openTrade(nv[1])}return}if(d.cnext){if(ci<CS.length-1)caseGo(ci+1);else caseEnd();return}if(d.cbt){CBO=!CBO;drawBar();return}if(d.gop){var gq=d.gop.split('|');if(TOUR){st.a=gq[0];st.stack=[{k:'tp',tr:gq[1]}];render();return}go(function(){st.a=gq[0];st.stack=[{k:'tp',tr:gq[1]}]});return}if(d.full){st.sh.full=1;drawTrade();return}if(d.ret){toast('Returned to Trading with a note (proposal)');return}if(d.tt){st.tt=d.tt;render(true);return}if(el.id==='oc-exBtn'){plain('Explore '+AN[st.a],'Areas and screens','<div class="chips">'+AR[st.a].map(function(c){return '<button data-exctx="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>');return}if(d.exctx){if(hist.length)hist[hist.length-1]=snap();closeSheet();st.stack.push({k:'ctx',id:d.exctx});render();return}if(d.case){caseStart();return}if(d.pg){var g=PG[d.pg];plain(g.t,AN[st.a],'<div class="rws">'+g.h+'</div>');return}if(el.id==='oc-apprBtn'){st.af='All';var tp=st.stack[st.stack.length-1];if(tp&&tp.k==='appr'){render(true);return}go(function(){st.stack.push({k:'appr'})});return}if(d.appr){st.af=d.appr;go(function(){st.stack.push({k:'appr'})});return}if(d.af){st.af=d.af;render(true);return}if(d.aptr){approveTr(d.aptr);return}if(d.apfx){var fz=FX.filter(function(x){return x.id===d.apfx})[0];fz.st='confirmed';ev(trd(fz.k),0,'Fixation '+fz.id+' confirmed ('+fz.type+')','F');toast('Fixation approved');render(true);return}if(d.crop){var ca=st.a;plain('By crop',AN[ca]+' · totals and crops',(ca==='F'?'':'<div class="sec-t"><span>Net exposure</span></div>'+expTable())+(ca==='R'?'':'<div class="sec-t"><span>P&L · US$k</span></div>'+pnlTable())+'<div class="lead">FX, Day, MTD and YTD are example values.</div>');return}if(d.tg){OP[d.tg]=!OP[d.tg];render(true);return}if(d.fxok&&TOUR){caseGo(ci+1);return}if(d.fxok){var f=FX.filter(function(x){return x.id===d.fxok})[0];f.st='confirmed';ev(trd(f.k),0,'Fixation '+f.id+' confirmed ('+f.type+')',st.a);toast('Fixation confirmed');if($('sheet').classList.contains('on'))openFix(f.id);render(true);return}
  if(d.do){doStep(d.do);return}
+ if(d.sim){simIn(trd(d.sim));return}
  if(d.goa){var tgt=d.goa;hist[hist.length-1]=snap();closeSheet();st.a=tgt;st.stack=[];render();return}
  if(el.closest('#oc-stabs')&&d.tab){st.sh.tab=d.tab;drawTrade();return}
  if(d.tr){if($('sheet').classList.contains('on')){var t=trd(d.tr);st.sh={tr:d.tr,tab:d.tab||'Flow'};$('sti').textContent=t.id+' · '+t.side+(t.draft?' (draft)':'');$('ssu').textContent=num(t.qty)+' t · '+t.grade+' · crop '+t.crop+' · '+t.cp;drawTrade()}else openTrade(d.tr,d.tab);return}
@@ -5899,7 +5910,25 @@ $('sbd').addEventListener('touchend',function(e){if(sx0===null||!st.sh||e.target
 })();
 
 
-function ensurePO(v){OCR.classList.add('frame');document.body.classList.add('oc-frame');try{window.goTo(v,true)}catch(e){}window.scrollTo(0,0)}
+function ensurePO(v){OCR.classList.add('frame');document.body.classList.add('oc-frame');
+ /* Sale reaproveita a tela da Purchase: muda o lado (ocSide) e abre a mesma view */
+ if((v==='purchase'||v==='sales')&&window.ocSide){window.ocSide(v==='sales'?'sell':'buy',PRE);PRE=null}
+ try{window.goTo(v==='sales'?'purchase':v,true)}catch(e){}window.scrollTo(0,0)}
+/* Order Book › Simulate: abre Purchase (compra) ou Sale (venda) já preenchida com a oferta */
+var PRE=null,OFR=null;
+function simIn(t){if(!t)return;OFR=t.id;PRE={side:t.side,qty:t.qty,price:t.price,crop:t.crop,grade:t.grade,board:t.board,cp:t.cp};
+ var scr={k:'scr',id:t.side==='Buy'?'purchase':'sales',c:'phys'};
+ if($('sheet').classList.contains('on')){hist[hist.length-1]=snap();closeSheet();st.a='T';st.stack.push(scr);render();return}
+ go(function(){st.a='T';st.stack.push(scr)})}
+/* Confirmou no Pricing: a oferta vira trade no book (passo 4) e sai do Order Book */
+window.ocOnCommit=function(kind,rec,L){var t=OFR&&trd(OFR);if(!t||(t.side==='Buy')!==(window.PO_SIDE!=='sell'))return;
+ if(kind==='save'){toast('Saved as draft · offer still in the Order Book');return}
+ var b={};((L&&L.okLegs)||[]).forEach(function(l){b[l.board]=(b[l.board]||0)+l.q});
+ t.qty=(L&&L.Q)||t.qty;if(Object.keys(b).length)t.board=b;t.pnl=L?Math.round(L.marginUsd/100)/10:t.pnl;
+ /* preço em BRL gera exposição FX (book em US$): soma na base de FX da safra, em US$ M */
+ if(/BRL/.test(rec.price||'')&&L&&L.okLegs){var fx=0;L.okLegs.forEach(function(l){fx+=sgn(t)*l.q*l.flatBrl/l.fx});EXC.fx[t.crop]=(EXC.fx[t.crop]||0)+fx/1e6}
+ t.price=rec.price;t.user=rec.reg&&rec.reg.user||t.user;t.ref=rec.id;t.draft=false;t.step=4;OFR=null;
+ ev(t,sgn(t)*t.qty,'Confirmed internally as '+rec.id+' · enters the book','T')}
 function syncTheme(){}
 /* Book atual para o impacto na confirmacao do pricing (ocImpact) */
 window.ocBook=function(){var b=book();return {p:b.p,d:b.d,crop:byCrop(),mk:MK,fx:EXC.fx}};
@@ -5945,8 +5974,8 @@ render();
   B.mk.forEach(function(m){px[m[0]]=m[1]});
   var sc={};for(s in B.p)sc[s]=(sc[s]||0)+B.p[s];for(s in B.d)sc[s]=(sc[s]||0)+B.d[s];
   for(s in sc)ec0+=sc[s]*LB*(px[s]||0)/100;
-  var brl=unit==='BRL_LB'||unit==='BRL_TON',q=0,dec=0,def=0;
-  d.okLegs.forEach(function(l){q+=l.q;dec+=l.q*LB*l.ice/100;if(brl)def+=l.q*l.flatBrl/l.fx});
+  var brl=unit==='BRL_LB'||unit==='BRL_TON',q=0,dec=0,def=0,sg=window.PO_SIDE==='sell'?-1:1;
+  d.okLegs.forEach(function(l){q+=sg*l.q;dec+=sg*l.q*LB*l.ice/100;if(brl)def+=sg*l.q*l.flatBrl/l.fx});
   var ef0=sum(B.fx)*1e6,ec1=ec0+dec,ef1=ef0+def;
   var cr=Object.keys(B.crop),c0={},c1={},t0=0,t1=0;
   cr.forEach(function(k){c0[k]=B.crop[k].p+B.crop[k].d;c1[k]=c0[k]+(k===crop?q:0);t0+=c0[k];t1+=c1[k]});
@@ -5961,5 +5990,60 @@ render();
 })();
 </script>
 <!-- fim impacto no book -->
+<!-- OneClick Mobile MVP: Sale no Pricing (mesma tela da Purchase, lado venda) -->
+<style>
+body.po-sale #vswitch{display:none!important}
+</style>
+<script>
+(function(){
+ /* Cada lado guarda a propria ordem: trocar entre Purchase e Sale nao perde o que foi digitado.
+    Sale sem oferta abre com uma venda de exemplo (250 t, 79.20 c/lb, crop 2026, H27). */
+ var SAVED={buy:null,sell:null},CUR='buy';
+ var SALE_DEMO={qty:250,price:'79.20 c/lb',crop:'2026',grade:'31-3-36 GS 28',board:{H27:250},cp:''};
+ function idx(id,txt){var el=document.getElementById(id);if(!el)return 0;for(var i=0;i<el.options.length;i++)if(el.options[i].text===txt)return i;return el.selectedIndex}
+ function ensureOpt(id,txt){var el=document.getElementById(id);if(!el||!txt)return;for(var i=0;i<el.options.length;i++)if(el.options[i].text===txt)return;var o=document.createElement('option');o.text=txt;el.add(o)}
+ function isoFor(b){for(var y=2025;y<=2028;y++)for(var m=1;m<=12;m++){var iso=y+'-'+('0'+m).slice(-2)+'-10',ref=refLabelFromIso(iso);if(MONTH_LIST.indexOf(ref)>=0&&boardForMonth(ref)===b)return iso}return null}
+ function stateFor(o){
+  var s=snapshotState(''),p=String(o.price).split(' '),v=parseFloat(p[0]),u=p[1];
+  var unit={'c/lb':'USD_LB','USD/lb':'USD_LB','BRL/lb':'BRL_LB','USD/t':'USD_TON','BRL/t':'BRL_TON'}[u]||s.unit;
+  if(u==='c/lb')v=v/100;
+  s.qty=String(o.qty);s.price=v.toFixed(unit==='USD_LB'?4:2);s.unit=unit;s.payterms=s.payterms||'30';
+  s.grade=idx('in-grade',o.grade);s.crop=idx('in-crop',o.crop);s.market=idx('in-market','EXPORT');s.supplier=o.cp||'';
+  var r0=s.routes.length?s.routes[0].idx:undefined,dl=[];
+  Object.keys(o.board||{}).forEach(function(b){var iso=isoFor(b);if(!iso)return;var ref=refLabelFromIso(iso),pay=payIsoFromFinal(iso),fb=boardForIso(pay);
+   dl.push({finalIso:iso,qty:String(o.board[b]),ref:ref,adj:'0',quote:String(curveFor(boardForMonth(ref)).c),payIso:pay,fxBoard:fb,fx:String(curveFor(fb).fx),route:r0})});
+  if(dl.length)s.deliveries=dl;
+  return s}
+ function texts(sell){
+  VIEW_TITLES.purchase=sell?'Sale Order':'Purchase Order';
+  var t=document.getElementById('topbar-title');if(t)t.textContent=VIEW_TITLES.purchase;
+  var h=document.querySelector('#commitModal .modal-head h2');if(h)h.textContent=sell?'Sale Order':'Purchase Order';
+  var lb=function(id,a,b){var el=document.getElementById(id),f=el&&el.closest('.form-field'),l=f&&f.querySelector('label');if(l)l.textContent=sell?a:b};
+  lb('in-supplier','Customer / Counterparty *','Supplier / Counterparty *');lb('in-buyer','Seller','Buyer');
+  document.body.classList.toggle('po-sale',sell);
+  if(typeof idCounter==='object'&&!idCounter.SC)idCounter.SC=18;
+ }
+ window.ocSide=function(side,offer){
+  if(side===CUR&&!offer)return;
+  if(side!==CUR)SAVED[CUR]=snapshotState(document.getElementById('in-supplier').value);
+  CUR=side;window.PO_SIDE=side;texts(side==='sell');
+  if(typeof setEditing==='function')setEditing(null);
+  if(typeof paintRegStrip==='function')paintRegStrip(null);
+  var s=offer?stateFor(offer):(SAVED[side]||(side==='sell'?stateFor(SALE_DEMO):null));
+  if(s){ensureOpt('in-supplier',s.supplier);restoreState(s)}else recalc();
+ };
+ /* "New order" na venda volta para a venda de exemplo, nao para a compra */
+ var cf=window.clearForm;
+ if(cf)window.clearForm=function(c){var r=cf.apply(this,arguments);if(!c&&window.PO_SIDE==='sell')restoreState(stateFor(SALE_DEMO));return r};
+ /* Reabrir uma ordem do Portfolio volta para o lado dela (Buy ou Sell) */
+ var ro=window.reopenItem;
+ if(ro)window.reopenItem=function(id){var it=null;['drafts','pending','positions'].forEach(function(k){(PORTFOLIO[k]||[]).forEach(function(i){if(i.id===id)it=i})});
+  var side=it&&/^Sell/.test(it.meta||'')?'sell':'buy';
+  if(side!==CUR){SAVED[CUR]=snapshotState(document.getElementById('in-supplier').value);CUR=side;window.PO_SIDE=side;texts(side==='sell')}
+  if(it&&it.state)ensureOpt('in-supplier',it.state.supplier);
+  return ro.apply(this,arguments)};
+})();
+</script>
+<!-- fim Sale no Pricing -->
 </body>
 </html>
