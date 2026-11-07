@@ -5184,6 +5184,27 @@ body.light #oc .mono.l{display:block}
 #oc .dc .chev,#oc .pg .chev{width:11px;height:11px;color:var(--muted2);flex:0 0 auto}
 #oc .ch{width:100%;height:auto;display:block;font-size:9.5px;font-weight:600;font-family:inherit}
 #oc .chc{background:var(--card);border-radius:14px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:6px}
+#oc .rk{background:var(--card);border-radius:14px;margin-bottom:10px;overflow:hidden}
+#oc .rk summary{list-style:none;cursor:pointer;padding:12px 14px 14px}
+#oc .rk summary::-webkit-details-marker{display:none}
+#oc .rkh{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+#oc .rkh i{font-style:normal;color:var(--blue);text-transform:none;letter-spacing:0;font-weight:700;font-size:11.5px}
+#oc .rk .cl2{display:none}#oc .rk[open] .cl2{display:inline}#oc .rk[open] .op2{display:none}
+#oc .hls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#oc .hl{display:flex;flex-direction:column;gap:3px;min-width:0}
+#oc .hl span{font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#oc .hl b{font-size:17px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+#oc .hl b.p{color:var(--green)}#oc .hl b.n{color:var(--red)}#oc .hl b.am{color:var(--amber)}
+#oc .hl small{font-size:10px;font-weight:600;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#oc .hl em{display:block;height:4px;border-radius:2px;background:var(--line);margin-top:4px;overflow:hidden}#oc .hl em i{display:block;height:100%;border-radius:2px}
+#oc .rkb{padding:0 6px 8px}#oc .rkb .chc{background:none}
+#oc .evn{display:flex;gap:10px;padding:11px 8px;border-top:1px solid var(--line);align-items:flex-start}
+#oc .evn .sv{flex:0 0 8px;height:8px;border-radius:50%;margin-top:5px;background:var(--amber)}#oc .evn .sv.h{background:var(--red)}#oc .evn .sv.l{background:var(--muted2)}
+#oc .evt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#oc .evt b{font-size:13px;font-weight:800;line-height:1.25}
+#oc .evt span{font-size:10.5px;color:var(--muted);font-weight:600}
+#oc .evt em{font-style:normal;font-size:11px;font-weight:600;color:var(--text)}
+#oc .evv{text-align:right;font-size:13px;font-weight:800;white-space:nowrap}#oc .evv small{display:block;font-size:10px;color:var(--muted2);font-weight:600}
 #oc .cht{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);margin-top:4px}
 #oc .cht b{color:var(--text)}
 #oc .hd2{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:-8px}
@@ -5722,11 +5743,57 @@ function portView2(){var b=book(),u=BO.filter(function(x){return b.p[x]||b.d[x]}
  +sec2('Long / short by crop · t','','<div class="chc">'+hBars(CROPS.map(function(k){return {l:'Crop '+k,v:c[k].p+c[k].d}}).concat([{l:'Total',v:b.N}]),{f:function(v){return ft(v)}})+'</div>')
  +sec2('Open contracts',oc.length,rws(oc.map(function(t){return dcRow({data:'data-tr="'+t.id+'" data-tab="Trade"',ti:what(t),su:t.id+' · '+t.cp,m:hedSt(t)[0]})})))}
 function meter2(l,v,pct,mark,c){return '<div class="mtr"><div class="mtr-l"><span>'+l+'</span><b>'+v+'</b></div><div class="mtr-t" style="position:relative"><i style="width:'+Math.min(100,pct)+'%;background:var(--'+c+')"></i>'+(mark!=null?'<em class="mk2" style="left:'+mark+'%"></em>':'')+'</div></div>'}
-function riskView(){var b=book(),u=Math.round(Math.abs(b.N)/LIM*100);
- return sec2('My limits','','<div class="chc">'+meter2('Net exposure vs limit*',ft(b.N)+' of ±'+LIM+' t · '+u+'%',u,null,u>80?'red':'amber')+meter2('Coverage vs policy*',b.C+'% · policy '+POL+'% min',b.C,POL,b.C<POL?'red':'green')+'</div>')
- +sec2('P&L sensitivity · US$','','<div class="chc"><div class="sl2"><label for="oc-sC">NY move <b id="oc-sCv">'+sk(SENS.c,0)+' c/lb</b></label><input id="oc-sC" type="range" min="-10" max="10" step="1" value="'+SENS.c+'"><label for="oc-sF">FX move <b id="oc-sFv">'+sk(SENS.f,0)+'%</b></label><input id="oc-sF" type="range" min="-10" max="10" step="1" value="'+SENS.f+'"></div><div id="oc-sOut">'+sensOut()+'</div></div>')
- +sec2('Risk drivers',EV.filter(function(e){return e.d}).length,rws(EV.filter(function(e){return e.d}).slice(0,4).map(function(e){return rw({data:'data-tr="'+e.tr+'" data-tab="Risk"',ti:e.x.split(' · ')[0]+' · '+e.tr.split('-').pop(),su:AN[e.a]+' · '+e.t,v:ft(e.d),vc:cls(e.d)})})))
- +'<div class="lead">Trader view. * Limit and policy are example values.</div>'}
+/* Risk do trader: mercado, operacional, crédito e caixa. Sem limites. Tudo calculado do book, exceto o marcado com * */
+var MCODE={F:'Jan',G:'Feb',H:'Mar',J:'Apr',K:'May',M:'Jun',N:'Jul',Q:'Aug',U:'Sep',V:'Oct',X:'Nov',Z:'Dec'};
+function mkOf(s){return MK.filter(function(m){return m[0]===s})[0]||MK[0]}
+function usdLb(t,s){var v=parseFloat(String(t.price).replace(/,/g,'')),p=t.price;return /BRL\/lb/.test(p)?v/mkOf(s)[2]:/c\/lb/.test(p)?v/100:/BRL\/t/.test(p)?v/mkOf(s)[2]/2204.62:/USD\/t/.test(p)?v/2204.62:v}
+function usdM(v){var a=Math.abs(v);return (v<0?'-':'')+'US$ '+(a>=1e6?num(a/1e6,2)+'M':num(a/1e3,a>=1e5?0:1)+'k')}
+/* Operational risk amplo: notícias e eventos ligados ao book (rota, região, destino, contraparte).
+   MVP: eventos de exemplo, entrada manual depois; próxima fase: feed de notícias com etiquetas automáticas. */
+var CPLOC={'Faz. Santa Rita':'MT','Faz. Boa Vista':'BA','Coop. example':'MT','Faz. Santa Clara':'MT','Americana - SP origin':'SP','Spinning mill (example)':'Vietnam'};
+var EVN=[
+ {h:'Santos port: long waiting lines for container ships',src:'Logistics',when:'today 07:40',sev:'h',tags:'Route · Santos · exports crop 2026',eff:'Dec/26 shipments may slip',f:function(t){return t.crop==='2026'}},
+ {h:'BR-163 blocked by heavy rains in Mato Grosso',src:'Logistics',when:'today 06:15',sev:'m',tags:'Region · MT · inland freight',eff:'Pickups from MT suppliers delayed',f:function(t){return CPLOC[t.cp]==='MT'&&t.side==='Buy'}},
+ {h:'Dry spell in western Bahia during boll filling',src:'Weather',when:'yesterday',sev:'m',tags:'Region · BA · supply',eff:'Delivery risk on purchases',f:function(t){return CPLOC[t.cp]==='BA'&&t.side==='Buy'}},
+ {h:'Vietnam spinning mills report weaker yarn orders',src:'Market',when:'2 days ago',sev:'l',tags:'Destination · Vietnam · sales',eff:'Risk of delayed take-up',f:function(t){return CPLOC[t.cp]==='Vietnam'&&t.side==='Sell'}}];
+function evHit(bk){var all={};var ev=EVN.map(function(e){var tr=bk.filter(e.f),q=0,v=0;tr.forEach(function(t){all[t.id]=t;Object.keys(t.board).forEach(function(s){q+=t.board[s];v+=t.board[s]*2204.62*usdLb(t,s)})});return {e:e,tr:tr,q:q,v:v}});
+ var q=0,v=0;Object.keys(all).forEach(function(k){var t=all[k];Object.keys(t.board).forEach(function(s){q+=t.board[s];v+=t.board[s]*2204.62*usdLb(t,s)})});return {ev:ev,q:q,v:v}}
+function evnRow(x){return '<div class="evn"><i class="sv '+x.e.sev+'"></i><div class="evt"><b>'+x.e.h+'</b><span>'+x.e.src+' · '+x.e.when+' · '+x.e.tags+'</span><em>'+x.e.eff+' · '+x.tr.length+' contract'+(x.tr.length===1?'':'s')+'</em></div><div class="evv">'+(x.tr.length?usdM(x.v).replace('US$ ',''):'–')+'<small>'+(x.q?num(x.q)+' t':'no exposure')+'</small></div></div>'}
+/* Bloco de risco: título, 3 destaques e o detalhe (gráficos) ao tocar */
+function hl(l,v,sub,c,pct,pc){return '<div class="hl"><span>'+l+'</span><b class="'+(c||'')+'">'+v+'</b><small>'+sub+'</small>'+(pct!=null?'<em><i style="width:'+Math.max(2,Math.min(100,pct))+'%;background:var(--'+(pc||'blue')+')"></i></em>':'')+'</div>'}
+function rk(t,hls,body){return '<details class="rk"><summary><div class="rkh">'+t+'<i><span class="op2">Details ›</span><span class="cl2">Hide</span></i></div><div class="hls">'+hls.join('')+'</div></summary><div class="rkb">'+body+'</div></details>'}
+/* Barras de exposição por contraparte, com valor e % do book */
+function cBars(rows){var W=340,rh=28,H=rows.length*rh+4,x0=122,bw=128,mx=Math.max.apply(0,rows.map(function(r){return Math.abs(r.v)}))||1,s='<svg viewBox="0 0 '+W+' '+H+'" class="ch">';
+ rows.forEach(function(r,i){var y=2+i*rh,w=Math.abs(r.v)/mx*bw;s+=svgT(0,y+16,r.l.length>19?r.l.slice(0,18)+'…':r.l,'start','text')+'<rect x="'+x0+'" y="'+(y+6)+'" width="'+bw+'" height="13" rx="3" style="fill:var(--line)"/><rect x="'+x0+'" y="'+(y+6)+'" width="'+Math.max(w,2)+'" height="13" rx="3" style="fill:var(--'+(r.c||'blue')+')"/>'+svgT(x0+bw+6,y+16,r.t,'start','text')});
+ return s+'</svg>'}
+/* Barras verticais com cor pelo sinal (entrada verde, saída vermelha) */
+function vBars(cats,vals,f){var W=340,H=150,pl=44,pr=6,pt=16,pb=32,mx=Math.max.apply(0,vals.map(Math.abs))*1.15||1;function y(v){return pt+(mx-v)/(2*mx)*(H-pt-pb)}
+ var gw=(W-pl-pr)/cats.length,bw=Math.min(34,gw*0.55),s='<svg viewBox="0 0 '+W+' '+H+'" class="ch">';
+ [mx/1.15,0,-mx/1.15].forEach(function(v){s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(v)+'" y2="'+y(v)+'" style="stroke:var(--'+(v?'line':'muted2')+')"/>'+svgT(pl-6,y(v)+3,f(v),'end')});
+ cats.forEach(function(c,i){var v=vals[i],x=pl+i*gw+(gw-bw)/2,h=Math.abs(y(v)-y(0));s+='<rect x="'+x+'" y="'+y(Math.max(v,0))+'" width="'+bw+'" height="'+Math.max(h,1)+'" rx="3" style="fill:var(--'+(v<0?'red':'green')+')"/>'+svgT(x+bw/2,v<0?y(v)+11:y(v)-4,f(v),'middle','text')+svgT(pl+i*gw+gw/2,H-5,c,'middle')});
+ return s+'</svg>'}
+function riskView(){var b=book(),bk=TR.filter(inBook),ec=0,sc={},s;
+ for(s in b.p)sc[s]=(sc[s]||0)+b.p[s];for(s in b.d)sc[s]=(sc[s]||0)+b.d[s];for(s in sc)ec+=sc[s]*2204.62*mkOf(s)[1]/100;
+ var ef=Object.keys(EXC.fx).reduce(function(a,k){return a+EXC.fx[k]},0)*1e6,vp=window.ocVaRparts?window.ocVaRparts(ec,ef):null;
+ /* exposição commodity por safra em US$ (físico + hedge bookado, cada um no preço da sua tela) */
+ var cc={};CROPS.forEach(function(k){cc[k]=0});TR.forEach(function(t){if(inBook(t))for(var s in t.board)cc[t.crop]+=sgn(t)*t.board[s]*2204.62*mkOf(s)[1]/100;if(t.hedge.st==='booked')cc[t.crop]+=-sgn(t)*t.hedge.lots*LOT*2204.62*mkOf(t.hedge.board)[1]/100});
+ var cp={},tot=0;bk.forEach(function(t){var c=cp[t.cp]||(cp[t.cp]={n:0,m:0,k:0});c.m+=t.pnl||0;c.k++;Object.keys(t.board).forEach(function(s){var n=t.board[s]*2204.62*usdLb(t,s);c.n+=n;tot+=n})});
+ var cps=Object.keys(cp).sort(function(a,c){return cp[c].n-cp[a].n}),top3=cps.slice(0,3).reduce(function(a,k){return a+cp[k].n},0);
+ var cf={};bk.forEach(function(t){Object.keys(t.board).forEach(function(s){cf[s]=(cf[s]||0)-sgn(t)*t.board[s]*2204.62*usdLb(t,s)})});
+ var mo=Object.keys(cf).sort(function(a,c){return (+a.slice(1))-(+c.slice(1))||'FGHJKMNQUVXZ'.indexOf(a[0])-'FGHJKMNQUVXZ'.indexOf(c[0])}),net=mo.reduce(function(a,k){return a+cf[k]},0);
+ var hq=bk.filter(function(t){return t.hedge.st==='requested'}),s6=TR.filter(function(t){return t.step===6}),s7=TR.filter(function(t){return t.step===7}),fxp=FX.filter(function(f){return f.st==='pending'});
+ var k$=function(v){return (v<0?'-':'')+num(Math.abs(v)/1e3,Math.abs(v)>=1e5?0:1)+'k'},mm=function(v){return (v<0?'-':'')+(Math.abs(v)>=1e6?num(Math.abs(v)/1e6,2)+'M':num(Math.abs(v)/1e3,0)+'k')};
+ var nop=hq.length+s6.length+s7.length+fxp.length+1,big=cps[0],mc10=b.D*2204.62*0.10,m0=mo[0],eh=evHit(bk);
+ return rk('Market risk',[hl('VaR 1d 95%*',vp?usdM(vp.t):'-','commodity + FX'),hl('Commodity',usdM(ec),'net '+ft(b.N)),hl('FX*',usdM(ef),'long USD vs BRL')],'<div class="chc"><div class="cht"><span>VaR 1 day 95%* · by factor</span><b>'+(vp?usdM(vp.t):'-')+'</b></div>'
+   +(vp?cBars([{l:'Commodity',v:vp.c,t:k$(vp.c),c:'a-T'},{l:'FX',v:vp.f,t:k$(vp.f),c:'a-F'},{l:'Diversification',v:vp.dv,t:k$(vp.dv),c:'green'}]):'')
+   +'<div class="cht"><span>Exposure by crop · US$</span><b>'+usdM(ec+ef)+'</b></div>'
+   +barChart(CROPS,[{v:CROPS.map(function(k){return cc[k]/1e3}),c:'a-T'},{v:CROPS.map(function(k){return (EXC.fx[k]||0)*1e3}),c:'a-F'}],{h:130,f:function(v){return (v<0?'-':'')+num(Math.abs(v),0)+'k'}})+lgd([['Commodity','a-T'],['FX*','a-F']])+'</div>')
+ +rk('Credit risk',[hl('Open exposure',usdM(tot),cps.length+' counterparties'),hl('Largest',(tot&&big?Math.round(cp[big].n/tot*100):0)+'%',big||'-',null,tot&&big?cp[big].n/tot*100:0),hl('Top 3',(tot?Math.round(top3/tot*100):0)+'%','of open exposure',null,tot?top3/tot*100:0,'amber')],'<div class="chc"><div class="cht"><span>Open notional by counterparty</span><b>Top 3 · '+(tot?Math.round(top3/tot*100):0)+'%</b></div>'+cBars(cps.map(function(k){return {l:k,v:cp[k].n,t:mm(cp[k].n)+' · '+(tot?Math.round(cp[k].n/tot*100):0)+'%'}}))+'</div>')
+ +rk('Cash flow risk',[hl('Next month',m0?usdM(cf[m0]):'-',m0?MCODE[m0[0]]+'/'+m0.slice(1)+' · '+m0:'-',m0?cls(cf[m0]):''),hl('Net, all months',usdM(net),mo.length+' delivery months',cls(net)),hl('Margin call',usdM(mc10),'if NY +10 c/lb',cls(mc10))],'<div class="chc"><div class="cht"><span>Net cash by delivery month</span><b>'+usdM(net)+'</b></div>'+vBars(mo.map(function(s){return MCODE[s[0]]+'/'+s.slice(1)}),mo.map(function(s){return cf[s]/1e3}),function(v){return (v<0?'-':'')+num(Math.abs(v),0)+'k'})
+   +'<div class="cht"><span>Margin call if NY rises · '+num(-b.D/LOT,0)+' lots short</span><b></b></div>'+cBars([5,10,15].map(function(m){var v=b.D*2204.62*m/100;return {l:'NY +'+m+' c/lb',v:v,t:mm(v),c:'red'}}))+'</div>')
+ +rk('Operational risk',[hl('Events*',String(eh.ev.filter(function(x){return x.tr.length}).length),eh.ev.filter(function(x){return x.e.sev==='h'&&x.tr.length}).length+' high impact','am'),hl('High impact',usdM(eh.ev.filter(function(x){return x.e.sev==='h'}).reduce(function(a,x){return a+x.v},0)),num(eh.ev.filter(function(x){return x.e.sev==='h'}).reduce(function(a,x){return a+x.q},0))+' t exposed','n'),hl('All events',usdM(eh.v),num(eh.q)+' t exposed')],
+   eh.ev.map(evnRow).join('')+'<div class="evn"><i class="sv l"></i><div class="evt"><b>Internal process</b><span>'+nop+' open items</span><em>'+[hq.length+' hedge not booked',(s6.length+s7.length)+' confirmation to send',fxp.length+' fixations','1 recon break*'].join(' · ')+'</em></div></div>')
+ +'<div class="lead">Tap a block for details. * Events, FX base, VaR parameters and reconciliation are example values. Exposure is calculated from the book.</div>'}
 function obView(){var o=offers();return '<div class="hd2"><span>Offers from counterparties and brokers</span><button class="lnk" data-wip="Manual offer entry">+ New offer</button></div>'+rws(o.map(function(t){return dcRow({data:'data-sim="'+t.id+'"',ti:what(t),su:t.cp+(t.via?' via '+t.via:'')+' · '+t.price+(t.valid?' · until '+t.valid.replace('today ',''):''),m:'Go to Pricing'})}),'No offers waiting')+'<div class="lead">Manual entry today. Automatic integration later, same flow.</div>'}
 function prcView(){return rws([dcRow({data:'data-go="purchase"',ti:'Purchase',su:'Purchase order · current screen',m:'Open'}),dcRow({data:'data-go="sales"',ti:'Sale',su:'Sale order · same screen as Purchase',m:'Open'}),dcRow({data:'data-wip="Derivatives"',ti:'Derivatives',su:'Futures and options',m:'Soon'})])}
 function homeT(){var t=st.tt||'mkt',n=offers().length;
@@ -5970,6 +6037,8 @@ render();
  function us(v,s){var a=Math.abs(v),x=a>=1e6?nm(a/1e6,2)+'M':a>=1e5?nm(a/1e3,0)+'k':nm(a/1e3,1)+'k';return (s?sg(v):(v<0?'-':''))+x}
  function dl(a,b,f){return Math.abs(b-a)<0.05?'–':f===tn?tn(b-a):us(b-a,true)}
  function vr(ec,ef){var c=ec*VC/SD,f=ef*VF/SD;return Z*Math.sqrt(c*c+f*f+2*RHO*c*f)}
+ window.ocVaR=vr; /* mesmo VaR na aba Trading › Risk */
+ window.ocVaRparts=function(ec,ef){var c=Z*Math.abs(ec)*VC/SD,f=Z*Math.abs(ef)*VF/SD,t=vr(ec,ef);return {c:c,f:f,t:t,dv:t-c-f}};
  function row(l,a,b,f){return '<tr><td>'+l+'</td><td>'+f(a)+'</td><td><b>'+f(b)+'</b></td><td class="dl">'+dl(a,b,f)+'</td></tr>'}
  window.ocImpact=function(d,crop,unit){
   var box=document.getElementById('impactBox');if(!box)return;

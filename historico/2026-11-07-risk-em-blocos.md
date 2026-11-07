@@ -1,0 +1,3 @@
+- Trading › Risk em 4 blocos (Market, Credit, Cash flow e Operational risk), cada um com 3 destaques; tocando no bloco, abre o detalhe
+- Operational risk liga eventos de mercado e logística (porto, rodovia, clima, destino) aos contratos do book, com volume e valor expostos
+- Sem limites e sem Risk drivers; a sensibilidade com controles deslizantes fica só em Portfolio
