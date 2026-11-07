@@ -2298,6 +2298,9 @@
         <div><span class="l">Price</span><span class="v" id="recap-price">—</span></div>
         <div><span class="l">Margin</span><span class="v" id="recap-pnl">—</span></div>
       </div>
+      <!-- OneClick Mobile MVP: impacto no book antes de confirmar (preenchido por ocImpact) -->
+      <div class="form-sec"><span class="t">Impact on book</span><span class="ln"></span></div>
+      <div class="impact-box" id="impactBox"></div>
       <!-- (v8-F21) So aparece depois que a ordem existe. -->
       <div class="reg-strip" id="regStrip">
         <div><span class="l">Order</span><span class="v" id="reg-order">—</span></div>
@@ -4038,6 +4041,8 @@
       marketUsdTon: marketUsdTon, revenueBrl: revenueBrl, costBrl: costBrl, costUsd: costUsd,
       marginUsd: marginUsd, marginBrl: marginBrl, marginPct: marginPct, marginPerTon: marginPerTon,
       financingUsd: financingUsd, notionalUsd: notionalUsd,
+      // OneClick Mobile MVP: entregas completas, usadas no impacto no book
+      okLegs: okLegs.map(function (l) { return { q: l.q, board: l.board, ice: l.ice, fx: l.fx, flatBrl: l.flatBrl }; }),
       boards: legs.map(function (l) { return l.board; }).filter(function (v, i, a) { return a.indexOf(v) === i; }),
       basisBoards: legs.map(function (l) { return l.basisBoard; }).filter(function (v, i, a) { return a.indexOf(v) === i; })
     };
@@ -4211,6 +4216,7 @@
     // (v8-F) Ao abrir, o pop-up ja diz o que falta — nao espera o trader
     // apertar Confirm para descobrir.
     checkBackOffice();
+    if (window.ocImpact) window.ocImpact(LAST, document.getElementById('in-crop').value, currentUnit);
     openSheet('commitModal');
   }
   function closeCommit() { closeSheet('commitModal'); resetSwipe(); }
@@ -5895,11 +5901,65 @@ $('sbd').addEventListener('touchend',function(e){if(sx0===null||!st.sh||e.target
 
 function ensurePO(v){OCR.classList.add('frame');document.body.classList.add('oc-frame');try{window.goTo(v,true)}catch(e){}window.scrollTo(0,0)}
 function syncTheme(){}
+/* Book atual para o impacto na confirmacao do pricing (ocImpact) */
+window.ocBook=function(){var b=book();return {p:b.p,d:b.d,crop:byCrop(),mk:MK,fx:EXC.fx}};
 var _ps=history.pushState.bind(history);history.pushState=function(s,t,u){if(s&&typeof s==='object'&&s.oc==null)s.oc=hist.length;return _ps(s,t,u)};
 document.body.classList.add('oc-on');st.light=document.body.classList.contains('light');
 render();
 })();
 </script>
 <!-- fim OneClick Mobile MVP -->
+<!-- OneClick Mobile MVP: impacto no book na confirmacao do pricing -->
+<style>
+.impact-box{margin:10px 16px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 12px 10px}
+.impact-box table{width:100%;border-collapse:collapse;font-size:12px}
+.impact-box th{font-size:8.5px;font-weight:800;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px;text-align:right;padding:4px 0}
+.impact-box th:first-child{text-align:left}
+.impact-box td{padding:6px 0;border-top:1px solid var(--line);text-align:right;color:var(--muted);white-space:nowrap}
+.impact-box td:first-child{text-align:left}
+.impact-box td b{color:var(--text);font-weight:800}
+.impact-box td.dl{font-size:10.5px;color:var(--muted2);padding-left:8px;width:1%}
+.impact-box .crops{display:none}.impact-box.open .crops{display:table-row-group}
+.impact-box .crops td{font-size:11px}
+.impact-box .tg{background:none;border:0;color:var(--blue);font:inherit;font-size:11.5px;font-weight:700;padding:8px 0 0;cursor:pointer}
+.impact-box .nt{font-size:9.5px;color:var(--muted2);margin-top:6px}
+</style>
+<script>
+(function(){
+ /* Long/short e exposicao commodity: book do MVP + entregas da ordem.
+    FX: so o preco em BRL gera exposicao (book em US$); base de FX do MVP e exemplo.
+    VaR parametrico, 1 dia, 95%. Volatilidades e correlacao sao exemplos. */
+ var LB=2204.62,Z=1.645,VC=0.22,VF=0.15,RHO=-0.30,SD=Math.sqrt(252);
+ function sum(o){var s=0;for(var k in o)s+=o[k];return s}
+ function nm(v,d){return Math.abs(v).toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+ function sg(v){return v>0?'+':v<0?'-':''}
+ function tn(v){v=Math.round(v*10)/10;return sg(v)+nm(v,v%1?1:0)+' t'}
+ function us(v,s){var a=Math.abs(v),x=a>=1e6?nm(a/1e6,2)+'M':a>=1e5?nm(a/1e3,0)+'k':nm(a/1e3,1)+'k';return (s?sg(v):(v<0?'-':''))+x}
+ function dl(a,b,f){return Math.abs(b-a)<0.05?'–':f===tn?tn(b-a):us(b-a,true)}
+ function vr(ec,ef){var c=ec*VC/SD,f=ef*VF/SD;return Z*Math.sqrt(c*c+f*f+2*RHO*c*f)}
+ function row(l,a,b,f){return '<tr><td>'+l+'</td><td>'+f(a)+'</td><td><b>'+f(b)+'</b></td><td class="dl">'+dl(a,b,f)+'</td></tr>'}
+ window.ocImpact=function(d,crop,unit){
+  var box=document.getElementById('impactBox');if(!box)return;
+  if(!window.ocBook||!d||!d.okLegs){box.innerHTML='';return}
+  var B=window.ocBook(),px={},ec0=0,s;
+  B.mk.forEach(function(m){px[m[0]]=m[1]});
+  var sc={};for(s in B.p)sc[s]=(sc[s]||0)+B.p[s];for(s in B.d)sc[s]=(sc[s]||0)+B.d[s];
+  for(s in sc)ec0+=sc[s]*LB*(px[s]||0)/100;
+  var brl=unit==='BRL_LB'||unit==='BRL_TON',q=0,dec=0,def=0;
+  d.okLegs.forEach(function(l){q+=l.q;dec+=l.q*LB*l.ice/100;if(brl)def+=l.q*l.flatBrl/l.fx});
+  var ef0=sum(B.fx)*1e6,ec1=ec0+dec,ef1=ef0+def;
+  var cr=Object.keys(B.crop),c0={},c1={},t0=0,t1=0;
+  cr.forEach(function(k){c0[k]=B.crop[k].p+B.crop[k].d;c1[k]=c0[k]+(k===crop?q:0);t0+=c0[k];t1+=c1[k]});
+  if(c0[crop]==null){c0[crop]=0;c1[crop]=q;t1+=q;cr.push(crop)}
+  box.className='impact-box';
+  box.innerHTML='<table><thead><tr><th>US$ · t</th><th>Now</th><th>After</th><th></th></tr></thead><tbody>'+
+   row('Long/short crop '+crop,c0[crop],c1[crop],tn)+row('Commodity exposure',ec0,ec1,us)+row('FX exposure*',ef0,ef1,us)+row('VaR 1d 95%*',vr(ec0,ef0),vr(ec1,ef1),us)+
+   '</tbody><tbody class="crops">'+cr.map(function(k){return row('Crop '+k,c0[k],c1[k],tn)}).join('')+row('Total',t0,t1,tn)+'</tbody></table>'+
+   '<button type="button" class="tg" onclick="var b=this.parentNode;b.classList.toggle(\'open\');this.textContent=b.classList.contains(\'open\')?\'Hide crops\':\'Long/short by crop ›\'">Long/short by crop ›</button>'+
+   '<div class="nt">* FX base and VaR parameters are examples.</div>';
+ };
+})();
+</script>
+<!-- fim impacto no book -->
 </body>
 </html>

@@ -1,0 +1,2 @@
+- Ao arrastar para Confirm na Purchase Order (V1 e V2), a tela de confirmação mostra o impacto no book antes e depois: long/short da safra, exposição commodity, exposição FX e VaR
+- "Long/short by crop" abre o long/short de cada safra e o total
