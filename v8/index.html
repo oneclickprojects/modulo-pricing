@@ -5876,8 +5876,8 @@ function rBub(K){var W=340,H=230,pl=40,pr=12,pt=14,pb=30,mxE=Math.max.apply(0,K.
  [[0.001,'0.1%'],[0.01,'1%'],[0.1,'10%'],[1,'100%']].forEach(function(a){s+='<line x1="'+x(a[0])+'" x2="'+x(a[0])+'" y1="'+pt+'" y2="'+(H-pb)+'" style="stroke:var(--line);stroke-dasharray:2 3"/>'+svgT(x(a[0]),H-pb+13,a[1],'middle')});
  [[2e4,'20k'],[1e5,'100k'],[1e6,'1M']].forEach(function(a){s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(a[0])+'" y2="'+y(a[0])+'" style="stroke:var(--line);stroke-dasharray:2 3"/>'+svgT(pl-5,y(a[0])+3,a[1],'end')});
  s+=svgT((W+pl)/2,H-3,'Probability in a month →','middle')+'<text x="10" y="'+((H-pb)/2)+'" text-anchor="middle" transform="rotate(-90 10 '+((H-pb)/2)+')" style="fill:var(--muted)">Financial impact →</text>';
- K.forEach(function(k){var r=6+14*Math.sqrt(k.e/mxE),cx=x(k.p),cy=y(k.v),lf=k.lf;
-  s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'" style="fill:var(--'+k.col+');fill-opacity:.28;stroke:var(--'+k.col+');stroke-width:2"/>'+'<text x="'+(lf?cx-r-4:cx+r+4).toFixed(1)+'" y="'+(cy+3.5).toFixed(1)+'" text-anchor="'+(lf?'end':'start')+'" style="font-weight:800;fill:var(--text)">'+k.k+'</text>'});
+ K.forEach(function(k){var r=24*Math.sqrt(Math.min(k.lu,1.5)),cx=x(k.p),cy=y(k.v),lf=k.lf,lc=k.lu<0.7?'green':k.lu<=0.9?'amber':'red';
+  s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'" style="fill:var(--'+k.col+');fill-opacity:.30;stroke:var(--'+lc+');stroke-width:2.5"/>'+'<text x="'+(lf?cx-r-4:cx+r+4).toFixed(1)+'" y="'+(cy+1).toFixed(1)+'" text-anchor="'+(lf?'end':'start')+'" style="font-weight:800;fill:var(--text)">'+k.k+'</text>'+'<text x="'+(lf?cx-r-4:cx+r+4).toFixed(1)+'" y="'+(cy+12).toFixed(1)+'" text-anchor="'+(lf?'end':'start')+'" style="font-weight:800;fill:var(--'+lc+')">'+Math.round(k.lu*100)+'% limit</text>'});
  return s+'</svg>'}
 function rOv(R,P,E){
  var var1m=R.var*Math.sqrt(21),netT=R.b.N+R.nS;
@@ -5893,7 +5893,7 @@ function rOv(R,P,E){
   {k:'Cash flow',rt:'cf',col:'a-R',p:pMc,v:mc,e:nC+nS,lf:1,vs:'margin call if prices +10%',ex:num(Math.abs(R.futC)/LOT+Math.abs(R.futS)/SOY.lot,0)+' lots short · '+usdM(nC+nS),x2:'cotton '+num(Math.abs(R.futC)/LOT,0)+' + soy* '+num(Math.abs(R.futS)/SOY.lot,0)+' lots',lu:mc/RLIM.margin,ll:'margin line '+mm2(RLIM.margin)+'*'},
   {k:'Operational',rt:'op',col:'a-O',lf:1,p:REVL[top.e.sev][1],v:top.v*REVL[top.e.sev][0],e:top.v,vs:'if the '+top.e.h.split(':')[0]+' event hits',ex:num(top.q)+' t · '+usdM(top.v),x2:E.ev.length+' events* · expected '+mm2(opEl),lu:hiV/RLIM.opHigh,ll:'high-impact appetite '+mm2(RLIM.opHigh)+'*',star:1}];
  var dr=EV.filter(function(e){return e.d}).slice(0,3);
- return '<div class="rvm"><div class="rvt">Risk map · next month<span>bubble size = exposure</span></div>'+rBub(K)+'</div>'
+ return '<div class="rvm"><div class="rvt">Risk map · next month<span>bubble size = limit use</span></div>'+rBub(K)+'</div>'
  +K.map(function(k){var pc=k.lu*100,lc=pc<70?'green':pc<=90?'amber':'red';
   return '<button class="rvr" data-rt="'+k.rt+'"><div class="rvg">'+rRing(k.p,k.col)+'<b>'+rPct(k.p)+(k.star?'*':'')+'</b></div><div class="rvx"><div class="rvh">'+k.k+' risk<i>›</i></div><div class="rvv">'+mm2(k.v)+(k.star?'*':'')+'<small>'+k.vs+'</small></div><div class="rve">'+k.ex+'</div><div class="rvs">'+k.x2+'</div>'
    +'<div class="rvl"><div class="rvb"><i style="width:'+Math.min(pc,100).toFixed(0)+'%;background:var(--'+lc+')"></i></div><span><b style="color:var(--'+lc+')">'+Math.round(pc)+'%</b> of '+k.ll+'</span></div></div></button>'}).join('')

@@ -1,0 +1,2 @@
+- No mapa de risco, o tamanho da bolha agora é o consumo de limite (100% sempre do mesmo tamanho) e a borda usa a cor do limite
+- Cada bolha mostra o % de limite ao lado do nome
