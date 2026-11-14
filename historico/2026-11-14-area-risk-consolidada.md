@@ -1,0 +1,3 @@
+- Área Risk com abas Overview, Market, Credit, Cash flow e Operational, consolidando todas as mesas (algodão do book e uma mesa de soja de exemplo)
+- Credit e Operational em mapas: exposição por país e por estado, e eventos marcados onde acontecem
+- Market com VaR por fator e por mesa e cenários de stress; Cash flow com caixa por mês e chamada de margem
