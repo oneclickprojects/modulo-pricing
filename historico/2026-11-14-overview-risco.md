@@ -1,0 +1,2 @@
+- Overview da área Risk com mapa de risco: probabilidade no mês contra impacto financeiro, bolha do tamanho da exposição
+- Um card por risco com probabilidade (anel), impacto financeiro, exposição e consumo de limite; tocar abre a aba

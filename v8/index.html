@@ -5207,7 +5207,16 @@ body.light #oc .mono.l{display:block}
 #oc .evv{text-align:right;font-size:13px;font-weight:800;white-space:nowrap}#oc .evv small{display:block;font-size:10px;color:var(--muted2);font-weight:600}
 #oc .rkbtn{display:block;width:100%;text-align:left;border:0;color:inherit;font:inherit;padding:12px 14px 14px;cursor:pointer}
 #oc .rmap{width:100%;height:auto;display:block}
-#oc .mlg{display:flex;align-items:center;gap:4px;justify-content:flex-end;font-size:10px;color:var(--muted2);font-weight:700}#oc .mlg i{width:18px;height:8px;border-radius:2px;display:inline-block}#oc .mlg span{margin:0 4px}
+#oc .mlg{display:flex;align-items:center;gap:4px;justify-content:flex-end;font-size:10px;color:var(--muted2);font-weight:700}
+#oc .rvm{background:var(--card);border-radius:22px;padding:12px 12px 8px}
+#oc .rvt{display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:0 0 6px 4px}#oc .rvt span{text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted2)}
+#oc .rvr{display:flex;gap:14px;align-items:center;width:100%;text-align:left;background:var(--card);border:0;border-radius:22px;padding:12px 14px;color:inherit;font:inherit;cursor:pointer}
+#oc .rvg{position:relative;width:64px;height:64px;flex:0 0 64px}#oc .rvg b{position:absolute;inset:0;display:grid;place-items:center;font-size:12.5px;font-weight:800}
+#oc .rvx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+#oc .rvh{display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}#oc .rvh i{font-style:normal;color:var(--blue);font-size:14px;line-height:1}
+#oc .rvv{font-size:20px;font-weight:800;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}#oc .rvv small{font-size:10.5px;font-weight:600;color:var(--muted)}
+#oc .rve{font-size:11.5px;font-weight:700}#oc .rvs{font-size:10.5px;color:var(--muted2);font-weight:600}
+#oc .rvl{margin-top:6px;display:flex;flex-direction:column;gap:4px}#oc .rvb{height:6px;border-radius:3px;background:var(--card2);overflow:hidden}#oc .rvb i{display:block;height:100%;border-radius:3px}#oc .rvl span{font-size:10.5px;color:var(--muted);font-weight:600}#oc .rvl b{font-weight:800}#oc .mlg i{width:18px;height:8px;border-radius:2px;display:inline-block}#oc .mlg span{margin:0 4px}
 #oc .cht{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);margin-top:4px}
 #oc .cht b{color:var(--text)}
 #oc .hd2{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:-8px}
@@ -5850,15 +5859,44 @@ function homeR(){var t=st.rt||'ov',R=rRisk(),P=rPos(),E=rEv(P);
  var seg='<div class="seg3 sc">'+tabs.map(function(x){return '<button data-rt="'+x[0]+'" class="'+(x[0]===t?'on':'')+'">'+x[1]+'</button>'}).join('')+'</div>';
  var hd='<div class="hd2"><span>All desks · Cotton + Soy*</span><span>Today 06:12</span></div>';
  var body=t==='mk'?rMkt(R):t==='cr'?rCr(P):t==='cf'?rCf(R,P):t==='op'?rOp(P,E):rOv(R,P,E);
- return {sum:'',body:seg+hd+body+'<div class="lead">* Soy desk, FX base, VaR parameters and events are example values. Cotton comes from the book. Maps: svg-maps, CC BY 4.0.</div>'}}
-function rOv(R,P,E){var tot=P.reduce(function(a,p){return a+p.v},0),cty={};P.forEach(function(p){cty[p.cty]=(cty[p.cty]||0)+p.v});
- var cp={};P.forEach(function(p){cp[p.cp]=(cp[p.cp]||0)+p.v});var top3=Object.keys(cp).map(function(k){return cp[k]}).sort(function(a,b){return b-a}).slice(0,3).reduce(function(a,v){return a+v},0);
- var M=rMonths(P),net=M.v.reduce(function(a,v){return a+v},0),mc=(R.futC*R.pxC+R.futS*soyT())*0.10,hi=E.ev.filter(function(x){return x.e.sev==='h'});
+ return {sum:'',body:seg+hd+body+'<div class="lead">* Soy desk, FX base, VaR parameters, events, default probabilities, loss rates and all limits are example values. Cotton comes from the book. Maps: svg-maps, CC BY 4.0.</div>'}}
+/* Overview da área Risk: mapa de risco (probabilidade x valor em risco, bolha = exposição) e um card por tipo
+   com probabilidade (anel), valor em risco, exposição e consumo de limite. Horizonte comum: próximo mês.
+   Exemplo (*): PD por contraparte, LGD, probabilidade e perda dos eventos, e todos os limites. */
+var RPD={'Coop. Sorriso*':0.02,'Crusher China*':0.01,'Faz. Rio Verde*':0.03,'Faz. Santa Rita':0.03,'Faz. Boa Vista':0.03,'Spinning mill (example)':0.025,'Coop. example':0.02},RLGD=0.6;
+var RLIM={var1m:400e3,cp:2e6,margin:500e3,opHigh:2e6};
+var REVL={h:[0.05,0.6],m:[0.02,0.3],l:[0.01,0.1]}; /* perda (% do exposto) e probabilidade no mês, por gravidade */
+function nCdf(x){var t=1/(1+0.2316419*Math.abs(x)),d=0.3989423*Math.exp(-x*x/2),p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>0?1-p:p}
+function rRing(p,col){var s=64,w=7,r=(s-w)/2,c=s/2,L=2*Math.PI*r,seg=Math.max(p*L,2.5);
+ return '<svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="'+r+'" style="fill:none;stroke:var(--card2);stroke-width:'+w+'"/><circle cx="32" cy="32" r="'+r+'" transform="rotate(-90 32 32)" style="fill:none;stroke:var(--'+col+');stroke-width:'+w+';stroke-linecap:round;stroke-dasharray:'+seg.toFixed(1)+' '+L.toFixed(1)+'"/></svg>'}
+function rPct(p){var x=p*100;return Math.abs(x-Math.round(x))<0.05&&x>=1?Math.round(x)+'%':x<1?x.toFixed(2)+'%':x<10?x.toFixed(1)+'%':Math.round(x)+'%'}
+function rBub(K){var W=340,H=230,pl=40,pr=12,pt=14,pb=30,mxE=Math.max.apply(0,K.map(function(k){return k.e}));
+ function x(p){return pl+(Math.log(Math.max(p,0.001))/Math.LN10+3)/3*(W-pl-pr)}function y(v){return pt+(6.3-Math.log(Math.max(v,2e4))/Math.LN10)/2*(H-pt-pb)}
+ var s='<svg viewBox="0 0 '+W+' '+H+'" class="ch"><defs><linearGradient id="oc-rg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" style="stop-color:var(--green);stop-opacity:.10"/><stop offset=".55" style="stop-color:var(--amber);stop-opacity:.10"/><stop offset="1" style="stop-color:var(--red);stop-opacity:.22"/></linearGradient></defs><rect x="'+pl+'" y="'+pt+'" width="'+(W-pl-pr)+'" height="'+(H-pt-pb)+'" rx="10" fill="url(#oc-rg)"/>';
+ [[0.001,'0.1%'],[0.01,'1%'],[0.1,'10%'],[1,'100%']].forEach(function(a){s+='<line x1="'+x(a[0])+'" x2="'+x(a[0])+'" y1="'+pt+'" y2="'+(H-pb)+'" style="stroke:var(--line);stroke-dasharray:2 3"/>'+svgT(x(a[0]),H-pb+13,a[1],'middle')});
+ [[2e4,'20k'],[1e5,'100k'],[1e6,'1M']].forEach(function(a){s+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(a[0])+'" y2="'+y(a[0])+'" style="stroke:var(--line);stroke-dasharray:2 3"/>'+svgT(pl-5,y(a[0])+3,a[1],'end')});
+ s+=svgT((W+pl)/2,H-3,'Probability in a month →','middle')+'<text x="10" y="'+((H-pb)/2)+'" text-anchor="middle" transform="rotate(-90 10 '+((H-pb)/2)+')" style="fill:var(--muted)">Financial impact →</text>';
+ K.forEach(function(k){var r=6+14*Math.sqrt(k.e/mxE),cx=x(k.p),cy=y(k.v),lf=k.lf;
+  s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'" style="fill:var(--'+k.col+');fill-opacity:.28;stroke:var(--'+k.col+');stroke-width:2"/>'+'<text x="'+(lf?cx-r-4:cx+r+4).toFixed(1)+'" y="'+(cy+3.5).toFixed(1)+'" text-anchor="'+(lf?'end':'start')+'" style="font-weight:800;fill:var(--text)">'+k.k+'</text>'});
+ return s+'</svg>'}
+function rOv(R,P,E){
+ var var1m=R.var*Math.sqrt(21),netT=R.b.N+R.nS;
+ var cp={};P.forEach(function(p){cp[p.cp]=(cp[p.cp]||0)+p.v});var ks=Object.keys(cp),big=ks.sort(function(a,b){return cp[b]-cp[a]})[0];
+ var pm=function(p){return 1-Math.pow(1-p,1/12)},pd=function(k){return RPD[k]||0.03},ead=ks.reduce(function(a,k){return a+cp[k]},0);
+ var pAny=1-ks.reduce(function(a,k){return a*(1-pm(pd(k)))},1),el=ks.reduce(function(a,k){return a+cp[k]*pm(pd(k))*RLGD},0);
+ var nC=Math.abs(R.futC)*R.pxC,nS=Math.abs(R.futS)*soyT(),wc=nC/(nC+nS),ws=1-wc,sp=Math.sqrt(wc*wc*RV.c*RV.c+ws*ws*RV.s*RV.s+2*RV.cs*wc*ws*RV.c*RV.s),sm=sp*Math.sqrt(21/252);
+ var mc=0.10*(nC+nS),pMc=1-nCdf(Math.log(1.1)/sm);
+ var hi=E.ev.filter(function(x){return x.e.sev==='h'&&x.v}).sort(function(a,b){return b.v-a.v}),top=hi[0]||E.ev[0],hiV=hi.reduce(function(a,x){return a+x.v},0);
+ var opEl=E.ev.reduce(function(a,x){return a+x.v*REVL[x.e.sev][0]*REVL[x.e.sev][1]},0);
+ var K=[{k:'Market',rt:'mk',col:'a-T',p:0.05,v:var1m,e:R.ecC+R.ecS+R.efC+R.efS,vs:'VaR 95% · 1 month',ex:num(netT,0)+' t net · '+usdM(R.ecC+R.ecS+R.efC+R.efS),x2:'commodity '+mm2(R.ecC+R.ecS)+' + FX* '+mm2(R.efC+R.efS),lu:var1m/RLIM.var1m,ll:'VaR limit '+mm2(RLIM.var1m)+'*'},
+  {k:'Credit',rt:'cr',col:'a-F',p:pm(pd(big)),v:cp[big]*RLGD,e:ead,vs:'if the largest counterparty defaults',ex:ks.length+' counterparties · '+usdM(ead),x2:'any default '+rPct(pAny)+' · expected loss '+mm2(el),lu:cp[big]/RLIM.cp,ll:'single counterparty limit '+mm2(RLIM.cp)+'*'},
+  {k:'Cash flow',rt:'cf',col:'a-R',p:pMc,v:mc,e:nC+nS,lf:1,vs:'margin call if prices +10%',ex:num(Math.abs(R.futC)/LOT+Math.abs(R.futS)/SOY.lot,0)+' lots short · '+usdM(nC+nS),x2:'cotton '+num(Math.abs(R.futC)/LOT,0)+' + soy* '+num(Math.abs(R.futS)/SOY.lot,0)+' lots',lu:mc/RLIM.margin,ll:'margin line '+mm2(RLIM.margin)+'*'},
+  {k:'Operational',rt:'op',col:'a-O',lf:1,p:REVL[top.e.sev][1],v:top.v*REVL[top.e.sev][0],e:top.v,vs:'if the '+top.e.h.split(':')[0]+' event hits',ex:num(top.q)+' t · '+usdM(top.v),x2:E.ev.length+' events* · expected '+mm2(opEl),lu:hiV/RLIM.opHigh,ll:'high-impact appetite '+mm2(RLIM.opHigh)+'*',star:1}];
  var dr=EV.filter(function(e){return e.d}).slice(0,3);
- return rkB('Market risk',[hl('VaR 1d 95%*',usdM(R.var),'Cotton '+mm2(R.varC)+'<br>Soy* '+mm2(R.varS)),hl('Commodity',usdM(R.ecC+R.ecS),'Cotton '+mm2(R.ecC)+'<br>Soy* '+mm2(R.ecS)),hl('FX*',usdM(R.efC+R.efS),'Cotton '+mm2(R.efC)+'<br>Soy* '+mm2(R.efS))],'mk')
- +rkB('Credit risk',[hl('Open exposure',usdM(tot),Object.keys(cp).length+' counterparties'),hl('Countries',String(Object.keys(cty).length),Object.keys(cty).map(function(k){return k.toUpperCase()}).join(' · ')),hl('Top 3',Math.round(top3/tot*100)+'%','of open exposure',null,top3/tot*100,'amber')],'cr')
- +rkB('Cash flow risk',[hl('Next month',usdM(M.v[0]),M.k[0],cls(M.v[0])),hl('Net, all months',usdM(net),M.k.length+' delivery months',cls(net)),hl('Margin call',usdM(mc),'if prices +10%',cls(mc))],'cf')
- +rkB('Operational risk',[hl('Events*',String(E.ev.filter(function(x){return x.hit.length}).length),hi.length+' high impact','am'),hl('High impact',usdM(hi.reduce(function(a,x){return a+x.v},0)),num(hi.reduce(function(a,x){return a+x.q},0))+' t exposed','n'),hl('All events',usdM(E.v),num(E.q)+' t exposed')],'op')
+ return '<div class="rvm"><div class="rvt">Risk map · next month<span>bubble size = exposure</span></div>'+rBub(K)+'</div>'
+ +K.map(function(k){var pc=k.lu*100,lc=pc<70?'green':pc<=90?'amber':'red';
+  return '<button class="rvr" data-rt="'+k.rt+'"><div class="rvg">'+rRing(k.p,k.col)+'<b>'+rPct(k.p)+(k.star?'*':'')+'</b></div><div class="rvx"><div class="rvh">'+k.k+' risk<i>›</i></div><div class="rvv">'+mm2(k.v)+(k.star?'*':'')+'<small>'+k.vs+'</small></div><div class="rve">'+k.ex+'</div><div class="rvs">'+k.x2+'</div>'
+   +'<div class="rvl"><div class="rvb"><i style="width:'+Math.min(pc,100).toFixed(0)+'%;background:var(--'+lc+')"></i></div><span><b style="color:var(--'+lc+')">'+Math.round(pc)+'%</b> of '+k.ll+'</span></div></div></button>'}).join('')
  +sec2('Latest changes in the book','','<div class="chc">'+cBars(dr.map(function(e){return {l:e.x.split(' · ')[0],v:e.d,t:ft(e.d)+' · '+e.tr.split('-').pop(),c:e.d<0?'red':'green'}}))+'</div>')}
 function rMkt(R){var dv=R.var-R.c-R.so-R.f,ec=R.ecC+R.ecS,ef=R.efC+R.efS;
  var sc=[['Commodities -10%',-0.10*ec],['BRL +10% vs USD',-0.10*ef],['Both together',-0.10*ec-0.10*ef],['Commodities +15%',0.15*ec]];
